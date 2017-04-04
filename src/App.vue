@@ -39,30 +39,34 @@ export default {
 </script>
 
 <style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  background-color: #f84;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  overflow: scroll;
-  -webkit-overflow-scrolling: touch;
-  display: flex;
-  justify-content: center;
-}
+  #app {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+    background-color: #f84;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    justify-content: center;
+  }
 
-.in-brown {
-  background-color: #842;
-}
+  .in-brown {
+    background-color: #842;
+  }
+
+  .flex{
+    display: flex;
+  }
 
  .dashboard{
     min-height: 100%;
-    max-width: 500px;
-    margin: 0px 30px;
+    max-width: 580px;
+    margin: 0px 20px;
     padding: 20px;
     background-color: #fa6;
     border: solid 20px;

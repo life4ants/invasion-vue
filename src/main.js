@@ -2,7 +2,9 @@
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue'
 import App from './App'
+import colorsMixin from './components/colors.js'
 
+Vue.use(colorsMixin)
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
