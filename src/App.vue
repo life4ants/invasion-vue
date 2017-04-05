@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div v-if="phase === 'welcome'">
+    <div class="flex-wrapper" v-if="phase === 'welcome'">
       <dashboard :action='start' content='start game'></dashboard>
     </div>
     <div v-else>
@@ -45,14 +45,17 @@ export default {
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
-    background-color: #f84;
     position: fixed;
     width: 100%;
     height: 100%;
     overflow: scroll;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .flex-wrapper{
     display: flex;
     justify-content: center;
+    background-color: #f84;
   }
 
   .in-brown {
