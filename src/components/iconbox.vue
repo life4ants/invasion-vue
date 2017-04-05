@@ -37,7 +37,7 @@
     },
     computed: {
       renderColors(){
-        let shape = (this.code - (this.code % 10))/10
+        let shape = (this.code - (this.code % 10))
         let items = []
         for(let i=0; i<10; i++){
           items.push(shape+i)

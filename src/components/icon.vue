@@ -6,9 +6,6 @@
 
   export default {
     name: 'icon',
-    components: {
-
-    },
     data(){
       return {
 
@@ -39,6 +36,9 @@
         const color = this.code % 10;
         const shape = (this.code - (this.code % 10))/10;
 
+        if (this.code < 0)
+          return " <svg version='1.1' height='20' width='20' viewbox='0 0 26.5 28.5'><"+shapes[0][1]+" style='fill:none; stroke:black; stroke-width:1.5; stroke-linejoin:round'"+shapes[0][0] + "/></svg>"
+        else
     return " <svg version='1.1' height='"+this.size+"' width='"+this.size+"' viewbox='0 0 26.5 28.5'><"+shapes[shape][1]+" style='fill:"+this.mycolors[color]+"; stroke:black; stroke-width:1.5; stroke-linejoin:round'"+shapes[shape][0] + "/></svg>";
       }
     }

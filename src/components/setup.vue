@@ -14,19 +14,29 @@
       </select>
     </div>
     <div v-if="step === 2">
-      <icon v-bind:code="playerCode" :size=40></icon>
-      <iconbox v-bind:code="playerCode" :changeIcon='changeIcon'></iconbox>
       <div>
-        <h4>Player {{player+1}}</h4>
+        <h4>Player {{currentPlayer+1}}</h4>
         <label>Name:</label>
-        <input v-model='players[player].name'><br>
-        <label>code:</label>
-        <input v-model='players[player].code'>
+        <input v-model='players[currentPlayer].name'><br>
+        <i>{{error}}</i>
+      </div>
+      <iconbox :code="filteredCode" :changeIcon='changeIcon'></iconbox>
+      <div class="icon">
+        <icon :code="code" :size=40></icon>
       </div>
     </div>
+    <div v-if="step === 3">
+      <ol>
+        <li v-for="player in players">
+          <h4>{{player.name}}:</h4>
+          <icon :code="player.code" ></icon>
+        </li>
+      </ol>
+    </div>
+    <button v-if='step === 1' class="btn" @click='cancel'>cancel</button>
     <button v-if="step > 1" v-on:click='lastStep' class="btn"> << Last Step</button>
-    <button v-if='player < numOfPlayers-1' v-on:click='nextStep' class="btn">Next Step >></button>
-    <button v-if='player === numOfPlayers-1' v-on:click='startGame' class="btn">Finish</button>
+    <button v-if='currentPlayer < numOfPlayers-1' v-on:click='nextStep' class="btn">Next Step >></button>
+    <button v-if='currentPlayer === numOfPlayers-1' v-on:click='nextStep' class="btn">Finish</button>
   </div>
 </template>
 
@@ -39,53 +49,97 @@ export default {
   components: {
     iconbox, icon
   },
+  props: [
+    'start', 'cancel'
+  ],
   data(){
     return {
       step: 1,
-      player: 0,
-      playerCode: 0,
-      players: [{name: '', code: 0}],
-      numOfPlayers: 2
+      code: -1,
+      currentPlayer: 0,
+      players: [{name: '', code: -1}],
+      numOfPlayers: 2,
+      error: ''
     }
   },
   methods: {
     changeIcon(i){
-      let players = this.players
-      players[this.player].code = i
-      this.players = players
+      this.code = i
     },
     nextStep(){
       if (this.step === 1){
         for (let i=0; i<this.numOfPlayers; i++){
-          this.players[i] = {name: '', code: 0}
+          this.players[i] = {name: '', code: -1}
         }
         this.step++
-        this.playercode = this.players[this.player].code
       }
-      else
-        this.player++
+      else if (this.step === 3){
+        this.start(this.players)
+      }
+      else {
+        let verify = this.verify()
+        if (verify === 'OK' && this.currentPlayer < this.numOfPlayers-1) {
+          this.players[this.currentPlayer].code = this.code
+          this.currentPlayer++
+          this.error = ''
+          this.code = this.players[this.currentPlayer].code
+        }
+        else if (verify === 'OK'){
+          this.players[this.currentPlayer].code = this.code
+          this.step++
+          this.error = ''
+        }
+        else
+          this.error = verify
+      }
     },
     lastStep(){
-      if (this.player > 0)
-        this.player--
+      if (this.currentPlayer > 0 && this.step === 2){
+        this.players[this.currentPlayer].code = this.code
+        this.currentPlayer--
+        this.code = this.players[this.currentPlayer].code
+      }
       else
         this.step--
     },
-    startGame(){
-
+    verify(){
+      if (this.players[this.currentPlayer].name.length < 1)
+        return "Please enter a name"
+      if (this.code < 0)
+        return "Please pick an Icon"
+      for (let i=0; i< this.players.length; i++){
+        if (this.code === this.players[i].code && i != this.currentPlayer)
+          return "That icon is already taken!"
+      }
+      return 'OK'
     }
   },
   computed: {
-    // playercode(){
-    //   return this.players[this.player].code
-    // }
+    filteredCode(){
+      return this.code >= 0 ? this.code : this.code+1
+    }
   }
 }
 </script>
 
 <style scoped>
+  .icon{
+    height: 60px;
+    margin: 10px;
+    padding: 10px;
+    border-top: 1px dashed;
+    border-bottom: 1px dashed;
+  }
   ol {
     list-style: none;
     padding: 0;
+  }
+  li {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  h4{
+    margin-right: 20px;
   }
 </style>
