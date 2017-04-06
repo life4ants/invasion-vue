@@ -1,11 +1,7 @@
 <template>
   <div id="app">
-    <div class="flex-wrapper" v-if="phase === 'welcome'">
-      <dashboard :action='start' content='start game'></dashboard>
-    </div>
-    <div v-else>
-      <game :close='cancel'></game>
-    </div>
+    <dashboard v-if="phase === 'welcome'" :start='start' :skip="skip" content='start game'></dashboard>
+    <game v-else :close='cancel' :initial="gamephase"></game>
   </div>
 </template>
 
@@ -23,7 +19,8 @@ export default {
 
   data(){
     return {
-      phase: 'welcome'
+      phase: 'welcome',
+      gamephase: 'setup'
     }
   },
 
@@ -31,8 +28,13 @@ export default {
     start(){
       this.phase = 'playing'
     },
+    skip(){
+      this.gamephase = 'playing'
+      this.phase = 'playing'
+    },
     cancel(){
       this.phase = 'welcome'
+      this.gamephase = 'setup'
     }
   }
 }
@@ -45,17 +47,20 @@ export default {
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
+  }
+
+  .bg{
     position: fixed;
+    background-color: #f84;
     width: 100%;
     height: 100%;
     overflow: scroll;
     -webkit-overflow-scrolling: touch;
   }
 
-  .flex-wrapper{
+  .flex-bg{
     display: flex;
     justify-content: center;
-    background-color: #f84;
   }
 
   .in-brown {
@@ -74,5 +79,11 @@ export default {
     background-color: #fa6;
     border: solid 20px;
     border-color: rgba(10,10,10,0.2) rgba(0,0,0,0.4);
+  }
+
+  @media(min-width: 620px){
+    .dashboard{
+      margin: auto;
+    }
   }
 </style>

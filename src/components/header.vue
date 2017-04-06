@@ -5,6 +5,8 @@
     </div>
     <div v-else class="header-content">
       <p>We must be playing!</p>
+      <button class='btn btn-default' @click='action'>End Game</button>
+      <button class='btn btn-default' @click='pop'>Give me some stuff!</button>
     </div>
   </nav>
 </template>
@@ -14,7 +16,7 @@
 export default {
   name: 'header',
   props: [
-    'phase'
+    'phase', 'action', 'pop'
   ]
 }
 </script>
