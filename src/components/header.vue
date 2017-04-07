@@ -4,19 +4,28 @@
       <p>Welcome to Invasion!</p>
     </div>
     <div v-else class="header-content">
-      <p>We must be playing!</p>
-      <button class='btn btn-default' @click='action'>End Game</button>
-      <button class='btn btn-default' @click='pop'>Give me some stuff!</button>
+      <div>
+        <button class='btn btn-default' @click='action'>End Game</button><br>
+        <button class='btn' @click='playersInfo'>Players Info</button>
+      </div>
+      <div>
+        <strong>Current Player: </strong>{{player.name}}
+      </div>
+      <icon :code="player.code"></icon>
     </div>
   </nav>
 </template>
 
 <script>
+import icon from './icon'
 
 export default {
   name: 'header',
+  components: {
+    icon
+  },
   props: [
-    'phase', 'action', 'pop'
+    'phase', 'action', 'player', 'playersInfo'
   ]
 }
 </script>
@@ -30,7 +39,7 @@ export default {
     top: 0px;
     left: 0px;
     width: 100vw;
-    min-height: 40px;
+    min-height: 75px;
     padding: 5px;
     font-size: 16px;
     z-index: 5;
@@ -42,10 +51,12 @@ export default {
     flex-wrap: wrap;
   }
 
-  .green{
-    height: 15px;
-    width: 200px;
-    background-color: #18b84a;
+  button {
+    margin-right: 10px;
+  }
+
+  .header-content > div{
+    margin-right: 10px;
   }
 
 </style>

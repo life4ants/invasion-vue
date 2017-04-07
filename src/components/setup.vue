@@ -69,7 +69,7 @@ export default {
     nextStep(){
       if (this.step === 1){
         for (let i=0; i<this.numOfPlayers; i++){
-          this.players[i] = {name: '', code: -1}
+          this.players[i] = {name: '', code: -1, terrCount: 0}
         }
         this.step++
       }

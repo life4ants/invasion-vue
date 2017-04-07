@@ -1,5 +1,5 @@
 <template>
-  <div v-html='insertShape'></div>
+  <div v-html='insertShape' style="height: 25px"></div>
 </template>
 
 <script>

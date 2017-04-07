@@ -1,6 +1,7 @@
 <template>
   <div class="overlay">
-    <territory v-for="terr in territories" :id="terr.id" :reserves="terr.reserves" :icon="terr.owner"></territory>
+    <territory v-for="terr in territories" :id="terr.id"
+             :reserves="terr.reserves" :icon="players[terr.owner].code"></territory>
   </div>
 </template>
 
@@ -11,7 +12,8 @@
     name: 'board',
     components: { territory },
     props: {
-      territories: { type: Array }
+      territories: { type: Array },
+      players: {type: Array}
     }
   }
 </script>
