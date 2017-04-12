@@ -1,40 +1,54 @@
 <template>
   <div id="app">
-    <dashboard v-if="phase === 'welcome'" :start='start' :skip="skip" content='start game'></dashboard>
-    <game v-else :close='cancel' :initial="gamephase"></game>
+    <div class="bg">
+      <dashboard v-if="phase === 'welcome'" :start='newGame' :skip="makeGame"></dashboard>
+      <setup v-else-if="phase === 'setup'" :cancel='cancel' :start="startGame"></setup>
+      <game v-else :close='cancel' :id="id"></game>
+    </div>
   </div>
 </template>
 
 <script>
 import dashboard from './components/dashboard'
 import game from './components/game'
+import setup from './components/setup'
 import 'bootstrap/dist/css/bootstrap.css';
 
 export default {
   name: 'app',
   components: {
     dashboard,
+    setup,
     game
   },
 
   data(){
     return {
       phase: 'welcome',
-      gamephase: 'setup'
+      id: 0
     }
   },
 
   methods: {
-    start(){
+    newGame(){
+      this.phase = 'setup'
+    },
+    startGame(){
       this.phase = 'playing'
     },
-    skip(){
-      this.gamephase = 'playing'
+    makeGame(){
+      const players = [{code:22,name:"Fred",terrCount:0},
+              {code:53,name:"Bill",terrCount:0},
+              {code:16,name:"Roslyn",terrCount:0},
+              {code:41,name:"Maria",terrCount:0},
+              {code:36,name:"Kyle",terrCount:0},
+              {code:8,name:"Edward",terrCount:0},
+              {code:17,name:"Joseph",terrCount:0}]
+      this.$store.commit('createGame', players)
       this.phase = 'playing'
     },
     cancel(){
       this.phase = 'welcome'
-      this.gamephase = 'setup'
     }
   }
 }
@@ -59,11 +73,6 @@ export default {
     -webkit-overflow-scrolling: touch;
   }
 
-  .flex-bg{
-    display: flex;
-    justify-content: center;
-  }
-
   .in-brown {
     background-color: #842;
   }
@@ -73,6 +82,7 @@ export default {
   }
 
  .dashboard{
+    flex: 0 1 580px;
     min-height: 100%;
     max-width: 580px;
     margin: 0px 20px;
@@ -85,6 +95,12 @@ export default {
   @media(min-width: 620px){
     .dashboard{
       margin: auto;
+    }
+  }
+  @media(min-width: 1200px){
+    .bg{
+      display: flex;
+      justify-content: center;
     }
   }
 </style>

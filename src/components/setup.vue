@@ -26,23 +26,25 @@
       </div>
     </div>
     <div v-if="step === 3">
+      <p>Here are the players, in the order they will play:</p>
       <ol>
-        <li v-for="player in players">
+        <li v-for="player in shuffledPlayers">
           <h4>{{player.name}}:</h4>
           <icon :code="player.code" ></icon>
         </li>
       </ol>
     </div>
     <button v-if='step === 1' class="btn" @click='cancel'>cancel</button>
-    <button v-if="step > 1" v-on:click='lastStep' class="btn"> << Last Step</button>
-    <button v-if='currentPlayer < numOfPlayers-1' v-on:click='nextStep' class="btn">Next Step >></button>
-    <button v-if='currentPlayer === numOfPlayers-1' v-on:click='nextStep' class="btn">Finish</button>
+    <button v-if="step > 1" v-on:click='lastStep' class="btn"> << Back</button>
+    <button v-if='currentPlayer < numOfPlayers-1' v-on:click='nextStep' class="btn">Next >></button>
+    <button v-if='currentPlayer === numOfPlayers-1' v-on:click='nextStep' class="btn">{{finishText}}</button>
   </div>
 </template>
 
 <script>
 import iconbox from './iconbox'
 import icon from './icon'
+import GameData from './game_data.js'
 
 export default {
   name: 'setup',
@@ -58,6 +60,7 @@ export default {
       code: -1,
       currentPlayer: 0,
       players: [{name: '', code: -1}],
+      shuffledPlayers: [],
       numOfPlayers: 2,
       error: ''
     }
@@ -65,19 +68,26 @@ export default {
   methods: {
     changeIcon(i){
       this.code = i
+      if (!this.verifyIcon())
+        this.error = "That icon is already taken!"
+      else
+        this.error = this.error === "Please enter a name" ? this.error : ''
     },
     nextStep(){
       if (this.step === 1){
+        this.players = []
         for (let i=0; i<this.numOfPlayers; i++){
           this.players[i] = {name: '', code: -1, terrCount: 0}
         }
+        this.code = -1
         this.step++
       }
       else if (this.step === 3){
-        this.start(this.players)
+        this.$store.commit('createGame', this.players)
+        this.start()
       }
       else {
-        let verify = this.verify()
+        const verify = this.verify()
         if (verify === 'OK' && this.currentPlayer < this.numOfPlayers-1) {
           this.players[this.currentPlayer].code = this.code
           this.currentPlayer++
@@ -86,6 +96,8 @@ export default {
         }
         else if (verify === 'OK'){
           this.players[this.currentPlayer].code = this.code
+          const players = this.players
+          this.shuffledPlayers = GameData.shuffle(players.slice())
           this.step++
           this.error = ''
         }
@@ -98,6 +110,7 @@ export default {
         this.players[this.currentPlayer].code = this.code
         this.currentPlayer--
         this.code = this.players[this.currentPlayer].code
+        this.error = ''
       }
       else
         this.step--
@@ -107,16 +120,24 @@ export default {
         return "Please enter a name"
       if (this.code < 0)
         return "Please pick an Icon"
+      if (!this.verifyIcon())
+        return "That icon is already taken!"
+      return 'OK'
+    },
+    verifyIcon(){
       for (let i=0; i< this.players.length; i++){
         if (this.code === this.players[i].code && i != this.currentPlayer)
-          return "That icon is already taken!"
+          return false
       }
-      return 'OK'
+      return true
     }
   },
   computed: {
     filteredCode(){
       return this.code >= 0 ? this.code : this.code+1
+    },
+    finishText(){
+      return this.step === 3 ? 'Start Game' : 'Finish'
     }
   }
 }

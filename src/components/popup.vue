@@ -1,5 +1,5 @@
 <template>
-  <modal :show.sync="show" effect="fade" :width="width" :backdrop="false">
+  <modal :show.sync="show" effect="fade" :backdrop="false">
     <div slot="modal-header" class="modal-header">
       <h4 class="modal-title">
         {{title}}
@@ -7,7 +7,6 @@
     </div>
 
     <!-- ====== body: ======= -->
-    <div v-if="type === 'info'" slot="modal-body" class="modal-body">{{content}}</div>
     <div v-if="type === 'players'" slot="modal-body" class="modal-body">
       <ul>
         <li v-for='player in players'>
@@ -17,6 +16,7 @@
         </li>
       </ul>
     </div>
+    <div v-else slot="modal-body" class="modal-body" v-html="content"></div>
 
     <!-- =====. footer: ====== -->
     <div v-if="['info', 'players'].includes(type)" slot="modal-footer" class="modal-footer">
@@ -56,14 +56,6 @@
       show: {},
       close: {},
       action: {}
-    },
-    computed: {
-      width(){
-        if (this.type === 'players')
-          return 350
-        else
-          return 400
-      }
     }
   }
 </script>
