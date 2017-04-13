@@ -12,7 +12,9 @@
 import dashboard from './components/dashboard'
 import game from './components/game'
 import setup from './components/setup'
-import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap/dist/js/bootstrap.min.js'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 export default {
   name: 'app',
@@ -91,6 +93,20 @@ export default {
     border: solid 20px;
     border-color: rgba(10,10,10,0.2) rgba(0,0,0,0.4);
   }
+
+  @media(min-width:768px) {
+
+  #popup .modal-dialog{
+    width: 400px;
+  }
+
+  #popup-center .modal-dialog{
+    width: 400px;
+    top: 50%;
+    margin: 0x auto;
+    transform: translateY(-50%);
+  }
+}
 
   @media(min-width: 620px){
     .dashboard{

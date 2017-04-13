@@ -1,5 +1,5 @@
 <template>
-  <modal :show.sync="show" effect="fade" :backdrop="false">
+  <modal :show="show" effect="fade" :backdrop="false" :id="id">
     <div slot="modal-header" class="modal-header">
       <h4 class="modal-title">
         {{title}}
@@ -16,15 +16,16 @@
         </li>
       </ul>
     </div>
+    <div v-else-if="type === 'alert'" slot="modal-body"></div>
     <div v-else slot="modal-body" class="modal-body" v-html="content"></div>
 
     <!-- =====. footer: ====== -->
-    <div v-if="['info', 'players'].includes(type)" slot="modal-footer" class="modal-footer">
-      <button type="button" class="btn btn-default" @click="close">Close</button>
+    <div v-if="type === 'yesno'" slot="modal-footer" class="modal-footer">
+      <button type="button" class="btn btn-primary" @click="action">Yes</button>
+      <button type="button" class="btn btn-danger" @click="close">No</button>
     </div>
-    <div v-if="type === 'confirm'" slot="modal-footer" class="modal-footer">
-      <button type="button" class="btn btn-default" @click="close">cancel</button>
-      <button type="button" class="btn btn-primary" @click="action">Ok</button>
+    <div v-else slot="modal-footer" class="modal-footer">
+      <button type="button" class="btn btn-default" @click="close">Ok</button>
     </div>
   </modal>
 </template>
@@ -55,7 +56,18 @@
       players: {},
       show: {},
       close: {},
-      action: {}
+      action: {},
+      size: {}
+    },
+    computed: {
+      id(){
+        if (this.size === 'small')
+          return 'popup'
+        else if (this.size === 'small-center')
+          return 'popup-center'
+        else
+          return null
+      }
     }
   }
 </script>
@@ -78,4 +90,5 @@
   li div {
     margin-left: 5px;
   }
+
 </style>

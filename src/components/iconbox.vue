@@ -3,7 +3,7 @@
     <div class="iconbox">
       <label>Choose Color:</label>
       <div>
-        <button v-for="icon in renderColors" class="square" @click="changeIcon(icon)">
+        <button v-for="icon in renderColors" class="btn btn-default" @click="changeIcon(icon)">
           <icon :code='icon'></icon>
         </button>
       </div>
@@ -11,7 +11,7 @@
     <div class="iconbox">
       <label>Choose Shape:</label>
       <div>
-        <button v-for="icon in renderShapes" class="square" @click="changeIcon(icon)">
+        <button v-for="icon in renderShapes" class="btn btn-default" @click="changeIcon(icon)">
           <icon :code='icon'></icon>
         </button>
       </div>
@@ -56,21 +56,20 @@
   }
 </script>
 
-<style>
+<style scoped>
 
   .iconbox{
     flex: 1 1 225px;
   }
 
-  .square{
+  .btn{
     height: 37px;
     width: 45px;
     padding: 6px;
+    border-radius: 0;
   }
 
-  .square:hover{
+  .btn:hover{
     background-color: #999;
-    margin-top: -4px;
-    height: 39px;
   }
 </style>

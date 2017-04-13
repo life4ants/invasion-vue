@@ -7,10 +7,11 @@
     <div class="wrapper">
       <invasion-map :clicker="clicker"></invasion-map>
     </div>
-    <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="players"
+    <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="players" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content"></popup>
     <alert :show="alert.show" placement="top-right" type="info" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
+    <app-footer :phase="game.phase"></app-footer>
   </div>
 </template>
 
@@ -22,7 +23,7 @@ import board from './board'
 import gameData from './game_data.js'
 import popup from './popup'
 import alert from './Alert'
-import $ from 'jquery'
+import footer from './footer'
 
 export default {
   name: 'game',
@@ -31,6 +32,7 @@ export default {
     board,
     popup,
     alert,
+    'app-footer': footer,
     'app-header': header,
     'invasion-map': invasionMap
   },
@@ -48,7 +50,7 @@ export default {
     if (this.game.phase === "initialTroops"){
       const content = "The territories have been randomly asigned. Each player will distribute troops in turn.<br><strong>"+
                       this.currentPlayer.name +"</strong>, start by adding "+this.currentPlayer.tempReserves +" troops."
-      this.openPopup('info', "Distribute Initial Troops", content)
+      this.openPopup('info', '', "Distribute Initial Troops", content)
     }
   },
   methods: {
@@ -57,7 +59,7 @@ export default {
         if (this.territories[i-1].owner === this.game.turnIndex)
           this.$store.commit('initialTroops', {gameId: this.id, terrId: i-1, turnIndex: this.game.turnIndex})
         else
-          this.openAlert("That territory does not belong to you!")
+          this.openPopup('alert', 'small-center','That territory does not belong to you!')
       }
       else{
         if (this.selected){
@@ -74,15 +76,12 @@ export default {
     },
 
     foo(){
-      this.openPopup('confirm', "no title", 'That territory does not belong to you!', () => {
-        console.log("hi")
-        this.closePopup()
-      })
+      this.openPopup('alert', 'small-center','That territory does not belong to you!')
     },
 
     // ======= Popups: ===========
-    openPopup(type, title, content, action){
-      this.popup = {show: true, type, title, content, action}
+    openPopup(type, size, title, content, action){
+      this.popup = {show: true, type, size, title, content, action}
     },
 
     closePopup(){
@@ -90,7 +89,7 @@ export default {
     },
 
     showAllPlayers(){
-      this.openPopup('players', 'Players Info')
+      this.openPopup('players', 'small', 'Players Info')
     },
 
     openAlert(content){
@@ -119,7 +118,7 @@ export default {
 
 <style scoped>
   .game{
-    padding-top: 100px;
+    padding-top: 60px;
   }
   .wrapper{
     background-color: #222;

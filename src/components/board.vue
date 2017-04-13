@@ -1,6 +1,6 @@
 <template>
   <div class="overlay">
-    <territory v-for="terr in territories" :id="terr.id"
+    <territory v-for="terr in territories" :id="terr.id" :key="terr.id"
              :reserves="terr.reserves" :icon="players[terr.owner].code"></territory>
   </div>
 </template>

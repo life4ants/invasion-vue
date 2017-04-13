@@ -45,6 +45,8 @@ export default new Vuex.Store({
         player.tempReserves --
         player.reserves --
       }
+      else
+        state.games[pl.gameId].otherData.phase = 'next'
     }
   }
 })
