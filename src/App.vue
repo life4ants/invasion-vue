@@ -1,9 +1,9 @@
 <template>
   <div id="app">
     <div class="bg">
-      <dashboard v-if="phase === 'welcome'" :start='newGame' :skip="makeGame"></dashboard>
+      <dashboard v-if="phase === 'welcome'" :start='newGame' :skip="makeGame" :games="games" :startGame="loadGame"></dashboard>
       <setup v-else-if="phase === 'setup'" :cancel='cancel' :start="startGame"></setup>
-      <game v-else :close='cancel' :id="id"></game>
+      <game v-else :close='cancel'></game>
     </div>
   </div>
 </template>
@@ -16,6 +16,8 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap/dist/js/bootstrap.min.js'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
+localStorage.invasionGames = localStorage.invasionGames || JSON.stringify([])
+
 export default {
   name: 'app',
   components: {
@@ -27,7 +29,7 @@ export default {
   data(){
     return {
       phase: 'welcome',
-      id: 0
+      games: JSON.parse(localStorage.invasionGames)
     }
   },
 
@@ -38,10 +40,14 @@ export default {
     startGame(){
       this.phase = 'playing'
     },
+    loadGame(id){
+      this.$store.commit('loadGame', this.games[id])
+      this.phase = 'playing'
+    },
     makeGame(){
       const players = [{code:22,name:"Fred",terrCount:0},
               {code:53,name:"Bill",terrCount:0},
-              {code:16,name:"Roslyn",terrCount:0},
+              {code:15,name:"Roslyn",terrCount:0},
               {code:41,name:"Maria",terrCount:0},
               {code:36,name:"Kyle",terrCount:0},
               {code:8,name:"Edward",terrCount:0},
@@ -51,6 +57,7 @@ export default {
     },
     cancel(){
       this.phase = 'welcome'
+      this.games = JSON.parse(localStorage.invasionGames)
     }
   }
 }
@@ -92,6 +99,10 @@ export default {
     background-color: #fa6;
     border: solid 20px;
     border-color: rgba(10,10,10,0.2) rgba(0,0,0,0.4);
+  }
+
+  .modal-content{
+    text-align: left;
   }
 
   @media(min-width:768px) {

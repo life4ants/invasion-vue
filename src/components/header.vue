@@ -5,7 +5,8 @@
         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
         <span class="caret"></span></button>
         <ul class="dropdown-menu">
-          <li><a class='btn-default' @click="action">End Game</a></li>
+          <li><a class='btn-default' @click="endGame">Close Game</a></li>
+          <li><a class='btn-default' @click="saveGame">Save Game</a></li>
           <li><a class='btn-default' @click="playersInfo">Players Info</a></li>
         </ul>
       </div>
@@ -31,7 +32,7 @@ export default {
     icon
   },
   props: [
-    'phase', 'action', 'player', 'playersInfo', 'endTurn', 'alert'
+    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn', 'alert'
   ]
 }
 </script>

@@ -26,7 +26,7 @@
       </div>
     </div>
     <div v-if="step === 3">
-      <p>Here are the players, in the order they will play:</p>
+      <p>Here are the players, listed in the order they will play in the game. However, depending on how many players there are, initial troop distribution may be in a different order.</p>
       <ol>
         <li v-for="player in shuffledPlayers">
           <h4>{{player.name}}:</h4>
@@ -144,6 +144,9 @@ export default {
 </script>
 
 <style scoped>
+  p{
+    text-align: left;
+  }
   .icon{
     height: 60px;
     margin: 10px;

@@ -16,13 +16,27 @@
         </li>
       </ul>
     </div>
-    <div v-else-if="type === 'alert'" slot="modal-body"></div>
+    <div v-else-if="['alert', 'yesno'].includes(type)" slot="modal-body"></div>
+    <div v-else-if="type === 'input'" slot="modal-body" class="modal-body">
+      <label>{{content}}</label>
+      <input type="text" v-model="name" autofocus>
+      <i>{{error}}</i>
+    </div>
     <div v-else slot="modal-body" class="modal-body" v-html="content"></div>
 
     <!-- =====. footer: ====== -->
     <div v-if="type === 'yesno'" slot="modal-footer" class="modal-footer">
+      <button type="button" class="btn btn-default" @click="close">No</button>
       <button type="button" class="btn btn-primary" @click="action">Yes</button>
-      <button type="button" class="btn btn-danger" @click="close">No</button>
+    </div>
+    <div v-else-if="type === 'input'" slot="modal-footer" class="modal-footer">
+      <button type="button" class="btn btn-default" @click="cancel">Cancel</button>
+      <button type="button" class="btn btn-primary" @click="checkName">Ok</button>
+    </div>
+    <div v-else-if="type === 'confirm'" slot="modal-footer" class="modal-footer">
+      <button type="button" class="btn btn-default" @click="close">Cancel</button>
+      <button type="button" class="btn btn-danger" @click="action(false)">Don't Save</button>
+      <button type="button" class="btn btn-primary" @click="action(true)">Save Game</button>
     </div>
     <div v-else slot="modal-footer" class="modal-footer">
       <button type="button" class="btn btn-default" @click="close">Ok</button>
@@ -39,7 +53,26 @@
     components: {
       modal, icon
     },
-
+    data(){
+      return {
+        name: '',
+        error: ''
+      }
+    },
+    methods: {
+      checkName(){
+        if (this.name.length < 3)
+          this.error = 'name must be at least 3 letters long'
+        else {
+          this.error = ''
+          this.action(true, this.name)
+        }
+      },
+      cancel(){
+        this.error = ''
+        this.action(false)
+      }
+    },
     props: {
       title: {
         type: String,

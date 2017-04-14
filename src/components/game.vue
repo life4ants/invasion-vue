@@ -1,13 +1,13 @@
 <template>
   <div class="game">
-    <app-header :phase='game.phase' :action='close' :endTurn="nextTurn" :alert="foo"
-                :player="players[game.turnIndex]" :playersInfo="showAllPlayers">
+    <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGame" :endTurn="nextTurn"
+                :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers">
     </app-header>
-    <board :territories="territories" :players="players"></board>
+    <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
       <invasion-map :clicker="clicker"></invasion-map>
     </div>
-    <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="players" :size="popup.size"
+    <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content"></popup>
     <alert :show="alert.show" placement="top-right" type="info" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
@@ -37,7 +37,7 @@ export default {
     'invasion-map': invasionMap
   },
   props: [
-    'close', 'id'
+    'close'
   ],
   data(){
     return {
@@ -50,14 +50,22 @@ export default {
     if (this.game.phase === "initialTroops"){
       const content = "The territories have been randomly asigned. Each player will distribute troops in turn.<br><strong>"+
                       this.currentPlayer.name +"</strong>, start by adding "+this.currentPlayer.tempReserves +" troops."
-      this.openPopup('info', '', "Distribute Initial Troops", content)
+      this.openPopup('info', 'small', "Distribute Initial Troops", content)
+    }
+  },
+  watch: {
+    showPopup(){
+      if (this.game.phase === 'initialTroops'){
+        const content = this.currentPlayer.name + ", now it is your turn to distribute " + this.currentPlayer.tempReserves + " troops."
+        this.openPopup('alert', 'small-center', content)
+      }
     }
   },
   methods: {
     clicker(i){
       if (this.game.phase === 'initialTroops'){
-        if (this.territories[i-1].owner === this.game.turnIndex)
-          this.$store.commit('initialTroops', {gameId: this.id, terrId: i-1, turnIndex: this.game.turnIndex})
+        if (this.game.territories[i-1].owner === this.game.turnIndex)
+          this.$store.dispatch('initialTroops', {terrId: i-1, turnIndex: this.game.turnIndex})
         else
           this.openPopup('alert', 'small-center','That territory does not belong to you!')
       }
@@ -67,16 +75,59 @@ export default {
         }
         $('.territory'+i).addClass("selected")
         this.selected = i
-        this.$store.commit('setReserves', {gameId: this.id, terrId: i-1, amount: 1})
+        this.$store.commit('setReserves', {terrId: i-1, amount: 1})
       }
     },
 
     nextTurn(){
-      this.$store.commit('nextTurn', this.id)
+      this.$store.commit('nextTurn')
     },
 
-    foo(){
-      this.openPopup('alert', 'small-center','That territory does not belong to you!')
+    confirmEndGame(){
+      if (this.game.id === null){
+        this.openPopup('confirm', 'small', 'Close Game', "Do you want to save your game before closing?", (x) => this.endGame(x))
+      }
+      else {
+        if (JSON.stringify(JSON.parse(localStorage.invasionGames)[this.game.id]) === JSON.stringify(this.game))
+          this.openPopup('yesno', 'small', 'Are you sure you want to close the game?', '', () => this.close() )
+        else
+          this.openPopup('confirm', 'small', 'Close Game', "Do you want to save your game before closing?", (x) => this.endGame(x))
+      }
+    },
+
+    endGame(save){
+      if (save){
+        if (this.game.id != null){
+          this.saveGame(this.game.id)
+          this.close()
+        }
+        else {
+          this.openPopup('input', '', 'Save Game', "Please name your game:", (x, name) => {
+            if (x){
+              this.$store.commit('setName', name)
+              this.saveGame()
+              this.close()
+            }
+            else
+              this.confirmEndGame()
+
+          })
+        }
+      }
+      else
+        this.close()
+    },
+
+    saveGame(id){
+      let games = JSON.parse(localStorage.invasionGames)
+      if (id != null){
+        games[id] = this.game
+      }
+      else{
+        this.$store.commit('setId', games.length)
+        games.push(this.game)
+      }
+      localStorage.setItem('invasionGames', JSON.stringify(games))
     },
 
     // ======= Popups: ===========
@@ -100,17 +151,14 @@ export default {
     }
   },
   computed: {
-    players(){
-      return this.$store.getters.players(this.id)
-    },
-    territories(){
-      return this.$store.getters.territories(this.id)
-    },
     game(){
-      return this.$store.getters.game(this.id)
+      return this.$store.getters.game()
     },
     currentPlayer(){
-      return this.players[this.game.turnIndex]
+      return this.game.players[this.game.turnIndex]
+    },
+    showPopup(){
+      return this.$store.getters.showPopup()
     }
   }
 }
