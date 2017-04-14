@@ -5,7 +5,7 @@
         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
         <span class="caret"></span></button>
         <ul class="dropdown-menu">
-          <li><a class='btn-default' @click="endGame">Close Game</a></li>
+          <li><a class='btn-default' @click="endGame">Exit Game</a></li>
           <li><a class='btn-default' @click="saveGame">Save Game</a></li>
           <li><a class='btn-default' @click="playersInfo">Players Info</a></li>
         </ul>

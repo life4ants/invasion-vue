@@ -9,10 +9,9 @@
     "build": "node build/build.js"
   },
   "dependencies": {
-    "bootstrap-vue": "^0.12.3",
+    "bootstrap": "^3.3.7",
     "jquery": "^3.2.1",
     "vue": "^2.1.10",
-    "vue-strap": "^1.1.37",
     "vuex": "^2.2.1"
   },
   "devDependencies": {

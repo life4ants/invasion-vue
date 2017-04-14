@@ -1,6 +1,6 @@
 <template>
   <div class="game">
-    <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGame" :endTurn="nextTurn"
+    <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGameButton" :endTurn="nextTurn"
                 :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers">
     </app-header>
     <board :territories="game.territories" :players="game.players"></board>
@@ -9,7 +9,7 @@
     </div>
     <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content"></popup>
-    <alert :show="alert.show" placement="top-right" type="info" :dismissable="true"
+    <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase"></app-footer>
   </div>
@@ -47,9 +47,9 @@ export default {
     }
   },
   mounted(){
+    window.onbeforeunload = () => this.checkForChanges() ? '' : undefined
     if (this.game.phase === "initialTroops"){
-      const content = "The territories have been randomly asigned. Each player will distribute troops in turn.<br><strong>"+
-                      this.currentPlayer.name +"</strong>, start by adding "+this.currentPlayer.tempReserves +" troops."
+      const content = "<p class='indent'>The territories have been randomly asigned. Each player will distribute troops in turn.</p><p class='indent'><strong>"+ this.currentPlayer.name +"</strong>, start by adding "+this.currentPlayer.tempReserves +" troops.</p>"
       this.openPopup('info', 'small', "Distribute Initial Troops", content)
     }
   },
@@ -59,6 +59,17 @@ export default {
         const content = this.currentPlayer.name + ", now it is your turn to distribute " + this.currentPlayer.tempReserves + " troops."
         this.openPopup('alert', 'small-center', content)
       }
+    }
+  },
+  computed: {
+    game(){
+      return this.$store.getters.game()
+    },
+    currentPlayer(){
+      return this.game.players[this.game.turnIndex]
+    },
+    showPopup(){
+      return this.$store.getters.showPopup()
     }
   },
   methods: {
@@ -79,20 +90,21 @@ export default {
       }
     },
 
-    nextTurn(){
+    nextTurn(){ //not used right now
       this.$store.commit('nextTurn')
     },
 
+    checkForChanges(){
+      if (this.game.id === null)
+        return true
+      return !(JSON.stringify(JSON.parse(localStorage.invasionGames)[this.game.id]) === JSON.stringify(this.game))
+    },
+
     confirmEndGame(){
-      if (this.game.id === null){
+      if (this.checkForChanges())
         this.openPopup('confirm', 'small', 'Close Game', "Do you want to save your game before closing?", (x) => this.endGame(x))
-      }
-      else {
-        if (JSON.stringify(JSON.parse(localStorage.invasionGames)[this.game.id]) === JSON.stringify(this.game))
-          this.openPopup('yesno', 'small', 'Are you sure you want to close the game?', '', () => this.close() )
-        else
-          this.openPopup('confirm', 'small', 'Close Game', "Do you want to save your game before closing?", (x) => this.endGame(x))
-      }
+      else
+        this.openPopup('yesno', 'small', 'Are you sure you want to close the game?', '', () => this.close() )
     },
 
     endGame(save){
@@ -110,12 +122,30 @@ export default {
             }
             else
               this.confirmEndGame()
-
           })
         }
       }
       else
         this.close()
+    },
+
+    saveGameButton(){
+      if (this.game.id === null){
+        this.openPopup('input', '', 'Save Game', "Please name your game:", (x, name) => {
+            if (x){
+              this.$store.commit('setName', name)
+              this.saveGame()
+              this.closePopup()
+              this.openAlert("The game was saved!")
+            }
+            else
+              this.closePopup()
+          })
+      }
+      else{
+        this.saveGame(this.game.id)
+        this.openAlert("The game was saved!")
+      }
     },
 
     saveGame(id){
@@ -149,23 +179,13 @@ export default {
     closeAlert(){
       this.alert.show = false
     }
-  },
-  computed: {
-    game(){
-      return this.$store.getters.game()
-    },
-    currentPlayer(){
-      return this.game.players[this.game.turnIndex]
-    },
-    showPopup(){
-      return this.$store.getters.showPopup()
-    }
   }
 }
 </script>
 
 <style scoped>
   .game{
+    position: absolute;
     padding-top: 60px;
   }
   .wrapper{

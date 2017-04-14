@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div class="bg">
+    <div :class="{bg: true, fixed: phase != 'playing' }">
       <dashboard v-if="phase === 'welcome'" :start='newGame' :skip="makeGame" :games="games" :startGame="loadGame"></dashboard>
       <setup v-else-if="phase === 'setup'" :cancel='cancel' :start="startGame"></setup>
       <game v-else :close='cancel'></game>
@@ -9,12 +9,11 @@
 </template>
 
 <script>
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap/dist/js/bootstrap.min.js'
 import dashboard from './components/dashboard'
 import game from './components/game'
 import setup from './components/setup'
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap/dist/js/bootstrap.min.js'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
 
 localStorage.invasionGames = localStorage.invasionGames || JSON.stringify([])
 
@@ -74,12 +73,15 @@ export default {
   }
 
   .bg{
-    position: fixed;
     background-color: #f84;
     width: 100%;
     height: 100%;
     overflow: scroll;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .fixed{
+    position: fixed;
   }
 
   .in-brown {
@@ -99,6 +101,10 @@ export default {
     background-color: #fa6;
     border: solid 20px;
     border-color: rgba(10,10,10,0.2) rgba(0,0,0,0.4);
+  }
+
+  .indent{
+    text-indent: 20px;
   }
 
   .modal-content{
