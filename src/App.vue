@@ -124,6 +124,12 @@ export default {
     transform: translateY(-50%);
   }
 }
+  @media only screen and (max-device-width: 600px){
+    .bg{
+      position: fixed;
+    }
+  }
+
 
   @media(min-width: 620px){
     .dashboard{

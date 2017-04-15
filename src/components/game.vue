@@ -1,7 +1,7 @@
 <template>
   <div class="game">
     <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGameButton" :endTurn="nextTurn"
-                :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers">
+                :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers" :round="game.round">
     </app-header>
     <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
@@ -49,15 +49,23 @@ export default {
   mounted(){
     window.onbeforeunload = () => this.checkForChanges() ? '' : undefined
     if (this.game.phase === "initialTroops"){
-      const content = "<p class='indent'>The territories have been randomly asigned. Each player will distribute troops in turn.</p><p class='indent'><strong>"+ this.currentPlayer.name +"</strong>, start by adding "+this.currentPlayer.tempReserves +" troops.</p>"
+      const troops = this.currentPlayer.tempReserves
+      const content = "<p class='indent'>The territories have been randomly asigned. Each player will distribute troops in turn.</p><p class='indent'><strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
       this.openPopup('info', 'small', "Distribute Initial Troops", content)
     }
   },
+  destroyed(){
+    window.onbeforeunload = undefined
+  },
   watch: {
-    showPopup(){
+    turnMessage(){
       if (this.game.phase === 'initialTroops'){
-        const content = this.currentPlayer.name + ", now it is your turn to distribute " + this.currentPlayer.tempReserves + " troops."
+        const troops = this.currentPlayer.tempReserves
+        const content = this.currentPlayer.name + ", now it is your turn to distribute " +(troops > 1 ? troops+" troops.": troops+" troop.")
         this.openPopup('alert', 'small-center', content)
+      }
+      else if (this.game.phase === 'addTroops'){
+        console.log('turnMessage recieved')
       }
     }
   },
@@ -68,8 +76,8 @@ export default {
     currentPlayer(){
       return this.game.players[this.game.turnIndex]
     },
-    showPopup(){
-      return this.$store.getters.showPopup()
+    turnMessage(){
+      return this.$store.getters.turnMessage()
     }
   },
   methods: {
@@ -85,9 +93,7 @@ export default {
           $('.territory'+this.selected).removeClass("selected")
         }
         $('.territory'+i).addClass("selected")
-        this.selected = i
-        this.$store.commit('setReserves', {terrId: i-1, amount: 1})
-      }
+        this.selected = i      }
     },
 
     nextTurn(){ //not used right now

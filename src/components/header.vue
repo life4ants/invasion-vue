@@ -1,6 +1,10 @@
 <template>
   <nav>
     <div class="header-content">
+      <div class="round-counter">
+        <span id="tiny">Round</span>
+        {{round}}
+      </div>
       <div class="dropdown">
         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
         <span class="caret"></span></button>
@@ -16,8 +20,9 @@
       <ul class="info">
         <li><strong>Current Player: </strong>{{player.name}}<icon :code="player.code" :size="18"></icon></li>
         <li><strong>Territories: </strong>{{player.terrCount}}</li>
+        <li v-if="phase === 'initialTroops'"><strong>Total Reserves: </strong>{{player.reserves}}</li>
         <li><strong>Reserves: </strong>{{player.tempReserves}}</li>
-        <li><strong>Total Reserves: </strong>{{player.reserves}}</li>
+        <li v-if="phase === 'attack3'">attack line goes here</li>
       </ul>
     </div>
   </nav>
@@ -32,7 +37,7 @@ export default {
     icon
   },
   props: [
-    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn', 'alert'
+    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn', 'alert', 'round'
   ]
 }
 </script>
@@ -64,6 +69,21 @@ export default {
     padding: 0;
     text-align: left;
     columns: 2;
+  }
+
+  #tiny{
+    font-size: 10px;
+  }
+
+  .round-counter{
+    border-radius: 40%;
+    border: 3px solid #740;
+    font-size: 25px;
+    height: 47px;
+    width: 45px;
+    line-height: 17px;
+    padding: 2px;
+    font-weight: 500;
   }
 
   .header-content > div{

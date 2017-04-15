@@ -88,6 +88,7 @@ export default {
   .stretch{
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
   }
   ul{
     list-style: none;
