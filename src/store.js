@@ -6,7 +6,8 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    game: {}
+    game: {},
+    version: '0.3.0'
   },
   getters: {
     game(state){
@@ -19,11 +20,17 @@ export default new Vuex.Store({
   mutations: {
     createGame(state, playerNames){
       const data = gameData.setUpGame(playerNames)
-      state.game = {name: '',     round: 0,   turnMessage: null, id: null,
-                    phase: 'initialTroops',
+      state.game = {version: '0.03', //change to any value in game needs to up version number
+                    id: null,
+                    name: '',
+                    nextCard: 0,
                     players: data.players,
+                    phase: 'initialTroops',
+                    round: 0,
+                    shuffledCards: [],
                     territories: data.territories,
-                    turnIndex: data.turnIndex
+                    turnIndex: data.turnIndex,
+                    turnMessage: null
                   }
     },
     loadGame(state, game){
@@ -41,7 +48,6 @@ export default new Vuex.Store({
     },
     getReserves(state, pl){
       state.game.players[state.game.turnIndex].reserves = pl.countryPoints + pl.conPoints
-      console.log('reserves set')
     },
     setName(state, name){
       state.game.name = name
@@ -49,11 +55,12 @@ export default new Vuex.Store({
     setId(state, id){
       state.game.id = id
     },
-    initialTroops(state, pl){
+    addTroops(state, pl){
       let player = state.game.players[pl.turnIndex]
       state.game.territories[pl.terrId].reserves += 1
-      player.tempReserves --
       player.reserves --
+      if (pl.phase === 'initialTroops')
+        player.tempReserves --
       state.game.players[pl.turnIndex] = player
     }
   },
@@ -61,7 +68,7 @@ export default new Vuex.Store({
     initialTroops({commit, state}, pl){
       let player = state.game.players[pl.turnIndex]
       if (player.tempReserves > 0)
-        commit('initialTroops', pl)
+        commit('addTroops', pl)
       if (player.tempReserves <= 0){
         commit('nextTurn', pl.gameId)
         let nextPlayer = state.game.players[state.game.turnIndex]
@@ -70,15 +77,20 @@ export default new Vuex.Store({
           state.game.turnMessage = "initialTroops"+state.game.turnIndex
         else{
           state.game.round = 1
-          console.log('round updated')
           state.game.phase = 'addTroops'
-          console.log('phase updated')
           const data = gameData.getReserves(state.game)
-          console.log('data recieved')
           commit('getReserves', data)
           state.game.turnMessage = data
-          console.log('turnMessage updated')
         }
+      }
+    },
+    addTroops({commit, state}, pl){
+      let player = state.game.players[pl.turnIndex]
+      if (player.reserves > 0)
+        commit('addTroops', pl)
+      if (player.reserves <= 0){
+        state.game.phase = "attack1"
+        state.game.turnMessage = "attack"
       }
     }
   }

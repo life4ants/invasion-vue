@@ -65,7 +65,10 @@ export default {
         this.openPopup('alert', 'small-center', content)
       }
       else if (this.game.phase === 'addTroops'){
-        console.log('turnMessage recieved')
+        this.showReservesMessage()
+      }
+      else if (this.game.phase === 'attack1'){
+        console.log("time to attack!")
       }
     }
   },
@@ -82,9 +85,9 @@ export default {
   },
   methods: {
     clicker(i){
-      if (this.game.phase === 'initialTroops'){
+      if (['initialTroops', 'addTroops'].includes(this.game.phase)){
         if (this.game.territories[i-1].owner === this.game.turnIndex)
-          this.$store.dispatch('initialTroops', {terrId: i-1, turnIndex: this.game.turnIndex})
+          this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
         else
           this.openPopup('alert', 'small-center','That territory does not belong to you!')
       }
@@ -96,6 +99,20 @@ export default {
         this.selected = i      }
     },
 
+    showReservesMessage(){
+      const data = this.game.turnMessage
+      const content = "<p><strong>"+this.currentPlayer.name +", it is your turn.</strong> You have "+this.currentPlayer.terrCount+
+                    " territories. This gives you "+data.countryPoints+" troops.</p>"
+      let regions = data.messages.length === 0 ? '' :
+                "You also get "+data.conPoints+" troops for owning "+data.messages.length+" Regions: "
+      let output = content+regions+"<ul>"
+      for (let i=0; i<data.messages.length; i++){
+        output+= "<li>"+data.messages[i]+"</li>"
+      }
+      output+="</ul><strong>You have a total of "+(data.countryPoints+data.conPoints)+" troops to distribute.</strong>"
+      this.openPopup('info', 'small', this.currentPlayer.name+"\'s Turn!", output)
+    },
+
     nextTurn(){ //not used right now
       this.$store.commit('nextTurn')
     },
@@ -103,7 +120,9 @@ export default {
     checkForChanges(){
       if (this.game.id === null)
         return true
-      return !(JSON.stringify(JSON.parse(localStorage.invasionGames)[this.game.id]) === JSON.stringify(this.game))
+      const games = JSON.parse(localStorage.invasionGames)
+      let gameId = games.findIndex((e) => e.id === this.game.id)
+      return !(JSON.stringify(games[gameId]) === JSON.stringify(this.game))
     },
 
     confirmEndGame(){
@@ -157,10 +176,13 @@ export default {
     saveGame(id){
       let games = JSON.parse(localStorage.invasionGames)
       if (id != null){
-        games[id] = this.game
+        let gameId = games.findIndex((e) => e.id === id)
+        if (gameId === -1)
+          console.error("error in saving game with id", id)
+        games[gameId] = this.game
       }
       else{
-        this.$store.commit('setId', games.length)
+        this.$store.commit('setId', games[games.length-1].id+1)
         games.push(this.game)
       }
       localStorage.setItem('invasionGames', JSON.stringify(games))

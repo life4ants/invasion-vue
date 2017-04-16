@@ -21,8 +21,9 @@
         <li><strong>Current Player: </strong>{{player.name}}<icon :code="player.code" :size="18"></icon></li>
         <li><strong>Territories: </strong>{{player.terrCount}}</li>
         <li v-if="phase === 'initialTroops'"><strong>Total Reserves: </strong>{{player.reserves}}</li>
-        <li><strong>Reserves: </strong>{{player.tempReserves}}</li>
-        <li v-if="phase === 'attack3'">attack line goes here</li>
+        <li v-else><strong>Reserves: </strong>{{player.reserves}}</li>
+        <li v-if="phase === 'initialTroops'"><strong>Reserves: </strong>{{player.tempReserves}}</li>
+        <li v-else>attack line goes here</li>
       </ul>
     </div>
   </nav>
@@ -82,7 +83,6 @@ export default {
     height: 47px;
     width: 45px;
     line-height: 17px;
-    padding: 2px;
     font-weight: 500;
   }
 
@@ -94,6 +94,10 @@ export default {
     position: relative;
     top: 3px;
     margin-left: 4px;
+  }
+
+  li a{
+    cursor: pointer;
   }
 
 </style>

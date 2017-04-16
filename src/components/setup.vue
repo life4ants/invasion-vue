@@ -77,7 +77,7 @@ export default {
       if (this.step === 1){
         this.players = []
         for (let i=0; i<this.numOfPlayers; i++){
-          this.players[i] = {name: '', code: -1, terrCount: 0}
+          this.players[i] = {name: '', code: -1, terrCount: 0, cards: []} //change here needs to up version number
         }
         this.code = -1
         this.step++

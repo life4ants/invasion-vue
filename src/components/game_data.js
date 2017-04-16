@@ -221,54 +221,45 @@ const gameData = {
       countryPoints = 3;
 
     const continents = this.reservesFromContinents(game.territories, game.turnIndex)
-    return {countryPoints, conPoints: continents.reserves, numOfCons: continents.num, message: continents.show}
+    return {countryPoints, conPoints: continents.reserves, messages: continents.show}
   },
 
   reservesFromContinents(territories, turnIndex){
     const continents = this.checkForContinent(territories, turnIndex)
-    var output = {"reserves": 0, "show": [], "num": 0}
+    var output = {"reserves": 0, "show": []}
     if (continents[0]){
-      output.num++
       output.show.push("8 troops for owning Canada")
       output.reserves += 8
     }
     if (continents[1]){
-      output.num++
       output.show.push("7 troops for owning Northeastern US")
       output.reserves += 7
     }
     if (continents[2]){
-      output.num++
       output.show.push("4 troops for owning Southeastern US")
       output.reserves += 4
     }
     if (continents[3]){
-      output.num++
       output.show.push("9 troops for owning Central US")
       output.reserves += 9
     }
     if (continents[4]){
-      output.num++
       output.show.push("5 troops for owning Western US")
       output.reserves += 5
     }
     if (continents[5]){
-      output.num++
       output.show.push("7 troops for owning Northern Mexico")
       output.reserves += 7
     }
     if (continents[6]){
-      output.num++
       output.show.push("7 troops for owning Southern Mexico")
       output.reserves += 7
     }
     if (continents[7]){
-      output.num++
       output.show.push("3 troops for owning Central America")
       output.reserves += 3
     }
     if (continents[8]){
-      output.num++
       output.show.push("2 troops for owning the Caribbean")
       output.reserves += 2
     }
@@ -281,55 +272,55 @@ const gameData = {
         continents[i] = true
 
     for (var i=0; i<14; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[0] = false
         break
       }
     }
     for (var i=14; i<26; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[1] = false
         break
       }
     }
     for (var i=26; i<33; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[2] = false
         break
       }
     }
     for (var i=33; i<48; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[3] = false
         break
       }
     }
     for (var i=48; i<55; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[4] = false
         break
       }
     }
     for (var i=55; i<67; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[5] = false
         break
       }
     }
     for (var i=67; i<78; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[6] = false
         break
       }
     }
     for (var i=78; i<85; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[7] = false
         break
       }
     }
     for (var i=85; i<90; i++){
-      if (territories[id].owner != id){
+      if (territories[i].owner != id){
         continents[8] = false
         break
       }
@@ -357,4 +348,37 @@ window.test = function(){
     // }
   }
 }
+window.testReserves = (turnIndex) => {
+let territories = []
+for (let i=0; i<90; i++){
+  if (i < 26)
+   territories[i] = {owner: 0}
+  else if (i < 33)
+    territories[i] = {owner: 1}
+  else if (i < 55)
+    territories[i] = {owner: 2}
+  else if (i < 67)
+    territories[i] = {owner: 3}
+  else if (i < 78)
+    territories[i] = {owner: 4}
+  else if (i < 85)
+    territories[i] = {owner: 5}
+  else
+    territories[i] = {owner: 6}
+}
 
+let game = {
+  players: [{code:22,name:"Fred",terrCount:26},
+              {code:53,name:"Bill",terrCount:7},
+              {code:15,name:"Roslyn",terrCount:22},
+              {code:41,name:"Maria",terrCount:12},
+              {code:36,name:"Kyle",terrCount:11},
+              {code:8,name:"Edward",terrCount:7},
+              {code:17,name:"Joseph",terrCount:5}],
+              territories,
+              turnIndex,
+              round: 1
+}
+console.log(game.players[turnIndex])
+console.log(gameData.getReserves(game))
+}
