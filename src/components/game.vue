@@ -53,6 +53,8 @@ export default {
       const content = "<p class='indent'>The territories have been randomly asigned. Each player will distribute troops in turn.</p><p class='indent'><strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
       this.openPopup('info', 'small', "Distribute Initial Troops", content)
     }
+    else if (this.game.phase === "addTroops")
+      this.showReservesMessage()
   },
   destroyed(){
     window.onbeforeunload = undefined
@@ -68,7 +70,8 @@ export default {
         this.showReservesMessage()
       }
       else if (this.game.phase === 'attack1'){
-        console.log("time to attack!")
+        const content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
+        this.openPopup('info', 'small', 'Distribution Complete', content)
       }
     }
   },
@@ -85,18 +88,61 @@ export default {
   },
   methods: {
     clicker(i){
-      if (['initialTroops', 'addTroops'].includes(this.game.phase)){
-        if (this.game.territories[i-1].owner === this.game.turnIndex)
-          this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
-        else
-          this.openPopup('alert', 'small-center','That territory does not belong to you!')
+      switch(this.game.phase){
+        case 'initialTroops':
+        case 'addTroops':
+          this.addTroops(i)
+          break
+        case 'attack1':
+          this.attack1(i)
+          break
+        case 'attack2':
+          this.attack2(i)
+          break
+        default:
+          if (this.selected)
+            $('.territory'+this.selected).removeClass("selected")
+          $('.territory'+i).addClass("selected")
+          this.selected = i
       }
-      else{
-        if (this.selected){
-          $('.territory'+this.selected).removeClass("selected")
+    },
+    addTroops(i){
+      if (this.game.territories[i-1].owner === this.game.turnIndex)
+        this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
+      else
+        this.openPopup('alert', 'small-center','That territory does not belong to you!')
+    },
+    attack1(i){
+      if (this.game.territories[i-1].owner === this.game.turnIndex){
+        if (this.game.territories[i-1].reserves > 1){
+          this.selected = i
+          $('.territory'+i).addClass("selected")
+          this.$store.commit('setPhase', 'attack2')
+          //this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
         }
-        $('.territory'+i).addClass("selected")
-        this.selected = i      }
+        else
+          this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
+      }
+      else
+        this.openPopup('alert', 'small-center','That territory does not belong to you!')
+    },
+    attack2(i){
+      if (this.game.territories[i-1].owner === this.game.turnIndex){
+        if (this.game.territories[i-1].reserves > 1){
+          $('.territory'+this.selected).removeClass("selected")
+          $('.territory'+i).addClass("selected")
+          this.selected = i
+        }
+        else
+          this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
+      }
+      else {
+        if (gameData.canFight(this.selected, i)){
+          console.log("time to attack, but we're starting over")//TO DO: set up modal for attacking
+          this.$store.commit('setPhase', 'attack1')
+        } else
+          this.openPopup('alert', 'small-center','Those territories do not border!')
+      }
     },
 
     showReservesMessage(){

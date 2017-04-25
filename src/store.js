@@ -18,6 +18,7 @@ export default new Vuex.Store({
     }
   },
   mutations: {
+    //==========Saving and Creating Games: ============
     createGame(state, playerNames){
       const data = gameData.setUpGame(playerNames)
       state.game = {version: '0.03', //change to any value in game needs to up version number
@@ -36,6 +37,25 @@ export default new Vuex.Store({
     loadGame(state, game){
       state.game = game
     },
+    setName(state, name){
+      state.game.name = name
+    },
+    setId(state, id){
+      state.game.id = id
+    },
+
+    //=============== other: ==========
+    setPhase(state, phase){
+      state.game.phase = phase
+    },
+    addTroops(state, pl){
+      let player = state.game.players[pl.turnIndex]
+      state.game.territories[pl.terrId].reserves += 1
+      player.reserves --
+      if (pl.phase === 'initialTroops')
+        player.tempReserves --
+      state.game.players[pl.turnIndex] = player
+    },
     nextTurn(state){
       let turnIndex = state.game.turnIndex
       turnIndex++
@@ -48,20 +68,6 @@ export default new Vuex.Store({
     },
     getReserves(state, pl){
       state.game.players[state.game.turnIndex].reserves = pl.countryPoints + pl.conPoints
-    },
-    setName(state, name){
-      state.game.name = name
-    },
-    setId(state, id){
-      state.game.id = id
-    },
-    addTroops(state, pl){
-      let player = state.game.players[pl.turnIndex]
-      state.game.territories[pl.terrId].reserves += 1
-      player.reserves --
-      if (pl.phase === 'initialTroops')
-        player.tempReserves --
-      state.game.players[pl.turnIndex] = player
     }
   },
   actions: {
@@ -70,7 +76,7 @@ export default new Vuex.Store({
       if (player.tempReserves > 0)
         commit('addTroops', pl)
       if (player.tempReserves <= 0){
-        commit('nextTurn', pl.gameId)
+        commit('nextTurn')
         let nextPlayer = state.game.players[state.game.turnIndex]
         nextPlayer = gameData.asignTempReserves(nextPlayer)
         if (nextPlayer.tempReserves > 0)
