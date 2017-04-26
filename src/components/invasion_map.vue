@@ -1,10 +1,116 @@
 
 <script>
+  import gameData from "./game_data.js"
   export default {
     name: 'invasionMap',
     props: [
-      'clicker'
-    ]
+      'openPopup', 'closePopup', 'setAttackLine'
+    ],
+    data(){
+      return {
+        selected: null
+      }
+    },
+    methods: {
+      clicker(i){
+        switch(this.game.phase){
+          case 'initialTroops':
+          case 'addTroops':
+            this.addTroops(i)
+            break
+          case 'attack1':
+            this.attack1(i)
+            break
+          case 'attack2':
+            this.attack2(i)
+            break
+          default:
+            if (this.selected)
+              $('.territory'+this.selected).removeClass("selected")
+            $('.territory'+i).addClass("selected")
+            this.selected = i
+        }
+      },
+      addTroops(i){
+        if (this.game.territories[i-1].owner === this.game.turnIndex)
+          this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
+        else
+          this.openPopup('alert', 'small-center','That territory does not belong to you!')
+      },
+      attack1(i){
+        let terr = this.game.territories[i-1]
+        if (terr.owner === this.game.turnIndex){
+          if (terr.reserves > 1){
+            this.selected = i
+            this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
+            $('.territory'+i).addClass("selected")
+            this.$store.commit('setPhase', 'attack2')
+          }
+          else
+            this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
+        }
+        else
+          this.openPopup('alert', 'small-center','That territory does not belong to you!')
+      },
+      attack2(i){
+        if (this.game.territories[i-1].owner === this.game.turnIndex){
+          if (this.game.territories[i-1].reserves > 1){
+            $('.territory'+this.selected).removeClass("selected")
+            $('.territory'+i).addClass("selected")
+            this.selected = i
+          }
+          else
+            this.openPopup('alert', 'small-center', 'That territory does not have enough troops to attack!')
+        }
+        else {
+          if (gameData.canFight(this.selected, i)){
+            $('.territory'+i).addClass("selected")
+            this.setAttackLine(gameData.territoryInfo[i].name, false)
+            this.attackModal(this.selected, i)
+          } else
+            this.openPopup('alert', 'small-center','Those territories do not border!')
+        }
+      },
+      attackModal(attackTerr, defendTerr){
+        const threedice = this.game.territories[attackTerr-1].reserves > 3 ? true : false
+        const title = this.currentPlayer.name + ", please pick number of dice to roll:"
+        this.openPopup("attack1", 'small-center', title, '', (i) => this.attack3(i, defendTerr), threedice)
+      },
+      attack3(i, defendTerr){
+        if (i === 0)
+          this.cancelAttack()
+        else {
+          if (this.game.territories[defendTerr-1].reserves > 1){
+            const title = this.game.players[this.game.territories[defendTerr-1].owner].name + ", please pick number of dice to roll:"
+            this.openPopup("attack1", 'small-center', title, '', (i) => this.attack4(i), false)
+          }
+          else
+            this.attack4(1)
+        }
+      },
+      attack4(i){
+        if (i === 0)
+          this.cancelAttack()
+        else {
+          this.closePopup()
+          console.log(i)
+        }
+      },
+      cancelAttack(){
+        this.closePopup()
+        this.setAttackLine(" ", true)
+        this.$store.commit('setPhase', 'attack1')
+        $(".selected").removeClass('selected')
+      }
+    },
+    computed: {
+      game(){
+        return this.$store.getters.game()
+      },
+      currentPlayer(){
+        return this.game.players[this.game.turnIndex]
+      }
+    }
   }
 </script>
 

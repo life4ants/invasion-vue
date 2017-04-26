@@ -1,14 +1,14 @@
 <template>
   <div class="game">
     <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGameButton" :endTurn="nextTurn"
-                :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers" :round="game.round">
+                :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers" :round="game.round" :attackLine="attackLine">
     </app-header>
     <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
-      <invasion-map :clicker="clicker"></invasion-map>
+      <invasion-map :openPopup="openPopup" :closePopup="closePopup" :setAttackLine="setAttackLine"></invasion-map>
     </div>
     <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
-           :type="popup.type" :title="popup.title" :content="popup.content"></popup>
+           :type="popup.type" :title="popup.title" :content="popup.content" :threedice="popup.threedice"></popup>
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase"></app-footer>
@@ -28,10 +28,7 @@ import footer from './footer'
 export default {
   name: 'game',
   components: {
-    setup,
-    board,
-    popup,
-    alert,
+    setup, board, popup, alert,
     'app-footer': footer,
     'app-header': header,
     'invasion-map': invasionMap
@@ -42,6 +39,7 @@ export default {
   data(){
     return {
       selected: null,
+      attackLine: ' ',
       popup: {show: false},
       alert: {show: false}
     }
@@ -87,62 +85,11 @@ export default {
     }
   },
   methods: {
-    clicker(i){
-      switch(this.game.phase){
-        case 'initialTroops':
-        case 'addTroops':
-          this.addTroops(i)
-          break
-        case 'attack1':
-          this.attack1(i)
-          break
-        case 'attack2':
-          this.attack2(i)
-          break
-        default:
-          if (this.selected)
-            $('.territory'+this.selected).removeClass("selected")
-          $('.territory'+i).addClass("selected")
-          this.selected = i
-      }
-    },
-    addTroops(i){
-      if (this.game.territories[i-1].owner === this.game.turnIndex)
-        this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
+    setAttackLine(text, erase){
+      if (erase)
+        this.attackLine = text
       else
-        this.openPopup('alert', 'small-center','That territory does not belong to you!')
-    },
-    attack1(i){
-      if (this.game.territories[i-1].owner === this.game.turnIndex){
-        if (this.game.territories[i-1].reserves > 1){
-          this.selected = i
-          $('.territory'+i).addClass("selected")
-          this.$store.commit('setPhase', 'attack2')
-          //this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
-        }
-        else
-          this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
-      }
-      else
-        this.openPopup('alert', 'small-center','That territory does not belong to you!')
-    },
-    attack2(i){
-      if (this.game.territories[i-1].owner === this.game.turnIndex){
-        if (this.game.territories[i-1].reserves > 1){
-          $('.territory'+this.selected).removeClass("selected")
-          $('.territory'+i).addClass("selected")
-          this.selected = i
-        }
-        else
-          this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
-      }
-      else {
-        if (gameData.canFight(this.selected, i)){
-          console.log("time to attack, but we're starting over")//TO DO: set up modal for attacking
-          this.$store.commit('setPhase', 'attack1')
-        } else
-          this.openPopup('alert', 'small-center','Those territories do not border!')
-      }
+        this.attackLine += text
     },
 
     showReservesMessage(){
@@ -235,8 +182,8 @@ export default {
     },
 
     // ======= Popups: ===========
-    openPopup(type, size, title, content, action){
-      this.popup = {show: true, type, size, title, content, action}
+    openPopup(type, size, title, content, action, threedice){
+      this.popup = {show: true, type, size, title, content, action, threedice}
     },
 
     closePopup(){

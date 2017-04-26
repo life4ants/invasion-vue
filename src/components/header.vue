@@ -23,7 +23,7 @@
         <li v-if="phase === 'initialTroops'"><strong>Total Reserves: </strong>{{player.reserves}}</li>
         <li v-else><strong>Reserves: </strong>{{player.reserves}}</li>
         <li v-if="phase === 'initialTroops'"><strong>Reserves: </strong>{{player.tempReserves}}</li>
-        <li v-else>attack line goes here</li>
+        <li v-else><strong>Attack: </strong>{{attackLine}}</li>
       </ul>
     </div>
   </nav>
@@ -38,7 +38,7 @@ export default {
     icon
   },
   props: [
-    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn', 'alert', 'round'
+    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn', 'alert', 'round', 'attackLine'
   ]
 }
 </script>
