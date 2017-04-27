@@ -10,7 +10,7 @@
         </div>
 
         <!-- ====== body: ======= -->
-        <div v-if="type === 'players'" class="modal-body">
+        <div v-if="'players' === type" class="modal-body">
           <ul>
             <li v-for='player in players'>
               <icon :code='player.code' ></icon>
@@ -19,15 +19,22 @@
             </li>
           </ul>
         </div>
-        <div v-else-if="'attack1' === type" class="modal-body center" >
+        <div v-else-if="'passTroops' === type" class="modal-body">
+          <label>Enter number of Troops to pass:</label>
+          <input id="troops" type="number"  @keyup.enter="action(troops)"
+                :min="data.min" :max="data.max" v-model.number="troops">
+          <label>This will leave behind:</label>
+          <span>{{behind}}</span>
+        </div>
+        <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-body center" >
           <input type="radio" id="one" :value="1" v-model="dice">
           <label for="one">One</label>
           <input type="radio" id="two" :value="2" v-model="dice">
           <label for="two">Two</label>
-          <input v-if="threedice" type="radio" id="three" :value="3" v-model="dice">
-          <label v-if="threedice" for="three">Three</label>
+          <input v-if="data" type="radio" id="three" :value="3" v-model="dice">
+          <label v-if="data" for="three">Three</label>
         </div>
-        <div v-else-if="['alert', 'yesno'].includes(type)"></div>
+        <div v-else-if="['alert', 'yesno', 'yesnocancel', 'callback'].includes(type)"></div>
         <div v-else-if="type === 'input'" class="modal-body">
           <label>{{content}}</label>
           <input type="text" v-model="name" maxlength="22" id="nameInput" @keyup.enter="checkName" @keyup.esc="cancel">
@@ -36,22 +43,33 @@
         <div v-else class="modal-body" v-html="content"></div> <!-- used by: confirm, info -->
 
         <!-- =====. footer: ====== -->
-        <div v-if="type === 'yesno'" class="modal-footer">
+        <div v-if="'yesno' === type" class="modal-footer">
           <button type="button" class="btn btn-default" @click="close">No</button>
           <button type="button" class="btn btn-primary" @click="action">Yes</button>
         </div>
-        <div v-else-if="type === 'input'" class="modal-footer">
+        <div v-else-if="'yesnocancel' === type" class="modal-footer">
+          <button type="button" class="btn btn-default" @click="close">Cancel</button>
+          <button type="button" class="btn btn-success" @click="action(false)">No</button>
+          <button type="button" class="btn btn-primary" @click="action(true)">Yes</button>
+        </div>
+        <div v-else-if="'input' === type" class="modal-footer">
           <button type="button" class="btn btn-default" @click="cancel">Cancel</button>
           <button type="button" class="btn btn-primary" @click="checkName">Ok</button>
         </div>
-        <div v-else-if="type === 'attack1'" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="action(0)">Cancel</button>
+        <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-footer">
+          <button v-if="'dicepick1' === type" type="button" class="btn btn-default" @click="action(0)">Cancel</button>
           <button type="button" class="btn btn-primary" @click="action(dice)">Ok</button>
         </div>
-        <div v-else-if="type === 'confirm'" class="modal-footer">
+        <div v-else-if="'confirm' === type" class="modal-footer">
           <button type="button" class="btn btn-default" @click="close">Cancel</button>
           <button type="button" class="btn btn-danger" @click="action(false)">Don't Save</button>
           <button type="button" class="btn btn-primary" @click="action(true)">Save Game</button>
+        </div>
+        <div v-else-if="'callback' === type" class="modal-footer">
+          <button type="button" class="btn btn-default" @click="action">Ok</button>
+        </div>
+        <div v-else-if="'passTroops' === type" class="modal-footer">
+          <button type="button" class="btn btn-default" @click="action(troops)">Ok</button>
         </div>
         <div v-else class="modal-footer"> <!-- used by: alert,players, info -->
           <button type="button" class="btn btn-default" @click="close">Ok</button>
@@ -71,11 +89,17 @@
     components: {
       icon
     },
+    props: [
+      'title', 'content', 'type', // alert, confirm, input, players, yesno, info, dicepick1, dicepick2
+      'players', 'show', 'close',
+      'action', 'size', 'data'
+    ],
     data(){
       return {
         name: '',
         error: '',
-        dice: null
+        dice: null,
+        troops: null
       }
     },
     methods: {
@@ -99,20 +123,24 @@
       },
       keyHandler(event) {
         if (event.key === "Enter") {
-          if ('yesno' === this.type)
+          if (['yesno', 'callback'].includes(this.type))
             this.action()
+          else if ('yesnocancel' === this.type)
+            this.action(true)
+          else if (['dicepick1', 'dicepick2'].includes(this.type))
+            this.action(this.dice)
           else if (['info', 'players', 'alert'].includes(this.type))
             this.close()
         }
-        if (event.key === "Escape")
-          this.close()
+        if (event.key === "Escape"){
+          if ("dicepick1" === this.type)
+            this.action(0)
+          else if ("dicepick2" === this.type){}
+          else
+            this.close()
+        }
       }
     },
-    props: [
-      'title', 'content', 'type', // alert, confirm, input, players, yesno, info
-      'players', 'show', 'close',
-      'action', 'size', 'threedice'
-    ],
     computed: {
       id(){
         if (this.size === 'small')
@@ -121,6 +149,9 @@
           return 'popup-center'
         else
           return null
+      },
+      behind(){
+        return this.data.max+1 - this.troops
       }
     },
     watch: {
@@ -128,6 +159,9 @@
         switch(this.type){
           case "input":
             setTimeout(() => $("#nameInput").trigger("focus"), 0)
+            break
+          case "passTroops":
+            setTimeout(() => $("#troops").trigger("focus"), 0)
             break
           case undefined:
             window.removeEventListener('keyup', this.keyHandler)
@@ -137,8 +171,10 @@
         }
       },
       title(){
-        if (this.type === "attack1")
-          this.dice = this.threedice ? 3 : 2
+        if (['dicepick1', 'dicepick2'].includes(this.type))
+          this.dice = this.data ? 3 : 2
+        else if ('passTroops' === this.type)
+          this.troops = this.data.max
       }
     }
   }
@@ -170,5 +206,8 @@
   }
   .center {
     text-align: center;
+  }
+  #troops {
+    width: 45px;
   }
 </style>

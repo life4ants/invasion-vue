@@ -1,3 +1,4 @@
+var isOdd = true;
 const gameData = {
   mycolors:
     ["#OOOOOO", "#FF00FF", "#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#FFFFFF", "#764710", "#FF8000"],
@@ -227,105 +228,130 @@ const gameData = {
   reservesFromContinents(territories, turnIndex){
     const continents = this.checkForContinent(territories, turnIndex)
     var output = {"reserves": 0, "show": []}
-    if (continents[0]){
-      output.show.push("8 troops for owning Canada")
-      output.reserves += 8
-    }
-    if (continents[1]){
-      output.show.push("7 troops for owning Northeastern US")
-      output.reserves += 7
-    }
-    if (continents[2]){
-      output.show.push("4 troops for owning Southeastern US")
-      output.reserves += 4
-    }
-    if (continents[3]){
-      output.show.push("9 troops for owning Central US")
-      output.reserves += 9
-    }
-    if (continents[4]){
-      output.show.push("5 troops for owning Western US")
-      output.reserves += 5
-    }
-    if (continents[5]){
-      output.show.push("7 troops for owning Northern Mexico")
-      output.reserves += 7
-    }
-    if (continents[6]){
-      output.show.push("7 troops for owning Southern Mexico")
-      output.reserves += 7
-    }
-    if (continents[7]){
-      output.show.push("3 troops for owning Central America")
-      output.reserves += 3
-    }
-    if (continents[8]){
-      output.show.push("2 troops for owning the Caribbean")
-      output.reserves += 2
-    }
+    if (continents[0]){ output.show.push("8 troops for owning Canada"); output.reserves += 8 }
+    if (continents[1]){ output.show.push("7 troops for owning Northeastern US"); output.reserves += 7 }
+    if (continents[2]){ output.show.push("4 troops for owning Southeastern US"); output.reserves += 4 }
+    if (continents[3]){ output.show.push("9 troops for owning Central US"); output.reserves += 9 }
+    if (continents[4]){ output.show.push("5 troops for owning Western US"); output.reserves += 5 }
+    if (continents[5]){ output.show.push("7 troops for owning Northern Mexico"); output.reserves += 7 }
+    if (continents[6]){ output.show.push("7 troops for owning Southern Mexico"); output.reserves += 7 }
+    if (continents[7]){ output.show.push("3 troops for owning Central America"); output.reserves += 3 }
+    if (continents[8]){ output.show.push("2 troops for owning the Caribbean"); output.reserves += 2 }
     return output
   },
 
   checkForContinent(territories, id){
     var continents = []
-    for (var i=0; i<9; i++)
-        continents[i] = true
+    for (var i=0; i<9; i++){ continents[i] = true }
 
-    for (var i=0; i<14; i++){
-      if (territories[i].owner != id){
-        continents[0] = false
-        break
-      }
-    }
-    for (var i=14; i<26; i++){
-      if (territories[i].owner != id){
-        continents[1] = false
-        break
-      }
-    }
-    for (var i=26; i<33; i++){
-      if (territories[i].owner != id){
-        continents[2] = false
-        break
-      }
-    }
-    for (var i=33; i<48; i++){
-      if (territories[i].owner != id){
-        continents[3] = false
-        break
-      }
-    }
-    for (var i=48; i<55; i++){
-      if (territories[i].owner != id){
-        continents[4] = false
-        break
-      }
-    }
-    for (var i=55; i<67; i++){
-      if (territories[i].owner != id){
-        continents[5] = false
-        break
-      }
-    }
-    for (var i=67; i<78; i++){
-      if (territories[i].owner != id){
-        continents[6] = false
-        break
-      }
-    }
-    for (var i=78; i<85; i++){
-      if (territories[i].owner != id){
-        continents[7] = false
-        break
-      }
-    }
-    for (var i=85; i<90; i++){
-      if (territories[i].owner != id){
-        continents[8] = false
-        break
-      }
-    }
+    for (var i=0;  i<14; i++){if (territories[i].owner != id){continents[0] = false; break } }
+    for (var i=14; i<26; i++){if (territories[i].owner != id){continents[1] = false; break } }
+    for (var i=26; i<33; i++){if (territories[i].owner != id){continents[2] = false; break } }
+    for (var i=33; i<48; i++){if (territories[i].owner != id){continents[3] = false; break } }
+    for (var i=48; i<55; i++){if (territories[i].owner != id){continents[4] = false; break } }
+    for (var i=55; i<67; i++){if (territories[i].owner != id){continents[5] = false; break } }
+    for (var i=67; i<78; i++){if (territories[i].owner != id){continents[6] = false; break } }
+    for (var i=78; i<85; i++){if (territories[i].owner != id){continents[7] = false; break } }
+    for (var i=85; i<90; i++){if (territories[i].owner != id){continents[8] = false; break } }
     return continents
+  },
+
+  runAttack(R, W, defenseWinsTie){
+    var diceW = [Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1)];
+    var diceR = [Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1)];
+    var white_high, white_low;
+    var red_high, red_low;
+    var whiteLose = 0;
+    var redLose = 0;
+    var tie = 0;
+
+    if (W === 2){
+      if (diceW[0] > diceW[1]){
+        white_high = diceW[0];
+        white_low = diceW[1];
+      }
+      else {
+        white_high = diceW[1];
+        white_low = diceW[0];
+      }
+    }
+    else {
+      white_high = diceW[0];
+      white_low = 0;
+    }
+
+    if (R === 1) {
+      red_high = diceR[0];
+      red_low = 0;
+    }
+    else if (R === 2) {
+      if (diceR[0] > diceR[1]){
+        red_high = diceR[0];
+        red_low = diceR[1];
+      }
+      else {
+        red_high = diceR[1];
+        red_low = diceR[0];
+      }
+    }
+    else if (R === 3){
+      if (diceR[0] >= diceR[1] && diceR[0] > diceR[2]){ //diceR[0] is the biggest, or tied for biggest
+        red_high = diceR[0];
+        if (diceR[1] > diceR[2])
+          red_low = diceR[1];
+        else
+          red_low = diceR[2];
+      }
+      else if (diceR[1] > diceR[0] && diceR[1] > diceR[2]){ //diceR[1] is biggest
+        red_high = diceR[1];
+        if (diceR[0] > diceR[2])
+          red_low = diceR[0];
+        else
+          red_low = diceR[2];
+      }
+      else {
+        red_high = diceR[2];
+        if (diceR[0] > diceR[1])
+          red_low = diceR[0];
+        else
+          red_low = diceR[1];
+      }
+    }
+
+    if (red_high > white_high)
+      whiteLose++;
+    else if (red_high === white_high){
+      if (defenseWinsTie)
+        redLose++;
+      else
+        tie += 0.5;
+    }
+    else
+      redLose++;
+
+    if (white_low === 0 || red_low === 0){}
+    else if (red_low > white_low)
+        whiteLose++;
+    else if (red_low === white_low){
+      if (defenseWinsTie)
+        redLose++;
+      else
+        tie += 0.5;
+    }
+    else
+      redLose++;
+
+    if (tie === 1) {
+      whiteLose++;
+      redLose++;
+    }
+    else if (tie > 0)
+    {
+      if (isOdd) {redLose++; isOdd = false; console.log('isEven')}
+      else {whiteLose++; isOdd = true; console.log('isOdd')}
+    }
+
+    return {whiteLose, redLose}
   }
 }
 

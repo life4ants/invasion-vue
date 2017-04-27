@@ -8,7 +8,8 @@
     ],
     data(){
       return {
-        selected: null
+        selected: null,
+        attack: {}
       }
     },
     methods: {
@@ -19,10 +20,10 @@
             this.addTroops(i)
             break
           case 'attack1':
-            this.attack1(i)
+            this.selectAttacker(i)
             break
           case 'attack2':
-            this.attack2(i)
+            this.selectAttacked(i)
             break
           default:
             if (this.selected)
@@ -37,7 +38,7 @@
         else
           this.openPopup('alert', 'small-center','That territory does not belong to you!')
       },
-      attack1(i){
+      selectAttacker(i){
         let terr = this.game.territories[i-1]
         if (terr.owner === this.game.turnIndex){
           if (terr.reserves > 1){
@@ -52,7 +53,7 @@
         else
           this.openPopup('alert', 'small-center','That territory does not belong to you!')
       },
-      attack2(i){
+      selectAttacked(i){
         if (this.game.territories[i-1].owner === this.game.turnIndex){
           if (this.game.territories[i-1].reserves > 1){
             $('.territory'+this.selected).removeClass("selected")
@@ -64,43 +65,76 @@
         }
         else {
           if (gameData.canFight(this.selected, i)){
-            $('.territory'+i).addClass("selected")
-            this.setAttackLine(gameData.territoryInfo[i].name, false)
-            this.attackModal(this.selected, i)
+            this.pickDice1(this.selected, i)
           } else
             this.openPopup('alert', 'small-center','Those territories do not border!')
         }
       },
-      attackModal(attackTerr, defendTerr){
-        const threedice = this.game.territories[attackTerr-1].reserves > 3 ? true : false
-        const title = this.currentPlayer.name + ", please pick number of dice to roll:"
-        this.openPopup("attack1", 'small-center', title, '', (i) => this.attack3(i, defendTerr), threedice)
+      pickDice1(attackId, defendId){
+        $('.territory'+defendId).addClass("selected")
+        this.setAttackLine(gameData.territoryInfo[defendId].name, false)
+        const attackTerr = this.game.territories[attackId-1]
+        const defendTerr = this.game.territories[defendId-1]
+        this.attack = {attackTerr, defendTerr}
+        if (attackTerr.reserves > 2){
+          const threedice = attackTerr.reserves > 3 ? true : false
+          const title = this.currentPlayer.name + ", please pick number of dice to roll:"
+          this.openPopup("dicepick1", 'small-center', title, '', (i) => this.pickDice2(i), threedice)
+        }
+        else
+          this.pickDice2(1)
       },
-      attack3(i, defendTerr){
-        if (i === 0)
+      pickDice2(redDice){
+        if (redDice === 0)
           this.cancelAttack()
         else {
-          if (this.game.territories[defendTerr-1].reserves > 1){
-            const title = this.game.players[this.game.territories[defendTerr-1].owner].name + ", please pick number of dice to roll:"
-            this.openPopup("attack1", 'small-center', title, '', (i) => this.attack4(i), false)
+          if (this.attack.defendTerr.reserves > 1){
+            const title = this.game.players[this.attack.defendTerr.owner].name + ", please pick number of dice to roll:"
+            this.openPopup("dicepick2", 'small-center', title, '', (i) => this.attackModal(redDice, i), false)
           }
           else
-            this.attack4(1)
+            this.attackModal(redDice, 1)
         }
       },
-      attack4(i){
-        if (i === 0)
-          this.cancelAttack()
-        else {
-          this.closePopup()
-          console.log(i)
-        }
+      attackModal(redDice, whiteDice){
+        let losses = gameData.runAttack(redDice, whiteDice, false)//defence always wins tie = false
+        Object.assign(losses, losses, this.attack)
+        const redLose = losses.redLose != 1 ? losses.redLose+" troops" : losses.redLose+" troop"
+        const whiteLose = losses.whiteLose != 1 ? losses.whiteLose+" troops" : losses.whiteLose+" troop"
+        const content = this.currentPlayer.name + ", you lost "+redLose+". "+this.game.players[this.attack.defendTerr.owner].name+" lost "+whiteLose+"."
+        this.closePopup()
+        this.$store.dispatch("attack", losses).then((conquered) => {
+          if (conquered)
+            this.openPopup('callback', 'small-center', content, '', () => this.conquerTerritory(losses.attackTerr.id, redDice))
+          else
+            this.openPopup('callback', 'small-center', content, '', () => this.closeAttack())
+        })
       },
       cancelAttack(){
         this.closePopup()
-        this.setAttackLine(" ", true)
+        this.setAttackLine("", true)
         this.$store.commit('setPhase', 'attack1')
         $(".selected").removeClass('selected')
+        this.attack = {}
+      },
+      closeAttack(){
+        this.closePopup()
+        this.$store.commit('setPhase', 'attack1')
+        $(".selected").removeClass('selected')
+      },
+      conquerTerritory(id, dice){
+        const reserves = this.game.territories[id-1].reserves
+        if (dice === reserves-1)
+          this.passTroops(reserves-1)
+        else {
+          this.openPopup("passTroops", "small-center", "Territory Conquered!", '',
+          (i) => this.passTroops(i), {min: dice, max: reserves-1})
+        }
+      },
+      passTroops(i){
+        this.closeAttack()
+        const data = {passingTerr: this.attack.attackTerr.id-1, recievingTerr: this.attack.defendTerr.id-1, troops: i}
+        this.$store.commit("passTroops", data)
       }
     },
     computed: {

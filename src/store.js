@@ -68,6 +68,32 @@ export default new Vuex.Store({
     },
     getReserves(state, pl){
       state.game.players[state.game.turnIndex].reserves = pl.countryPoints + pl.conPoints
+    },
+    conquerTerr(state, pl){
+      const attackTerr = state.game.territories[pl.attackTerr.id-1]
+      const defendTerr = state.game.territories[pl.defendTerr.id-1]
+      attackTerr.reserves -= pl.redLose
+      defendTerr.reserves = null
+      defendTerr.owner = attackTerr.owner
+    },
+    attackTerr(state, pl){
+      const attackTerr = state.game.territories[pl.attackTerr.id-1]
+      const defendTerr = state.game.territories[pl.defendTerr.id-1]
+      attackTerr.reserves -= pl.redLose
+      defendTerr.reserves -= pl.whiteLose
+    },
+    passTroops(state, pl){
+      state.game.territories[pl.passingTerr].reserves -= pl.troops
+      state.game.territories[pl.recievingTerr].reserves += pl.troops
+    },
+    countTerritories(state){
+      let counts = new Array(state.game.players.length).fill(0)
+      for(let i = 0; i<state.game.territories.length; i++){
+        counts[state.game.territories[i].owner]++
+      }
+      for (let i = 0; i<counts.length; i++){
+        state.game.players[i].terrCount = counts[i]
+      }
     }
   },
   actions: {
@@ -97,6 +123,17 @@ export default new Vuex.Store({
       if (player.reserves <= 0){
         state.game.phase = "attack1"
         state.game.turnMessage = "attack"
+      }
+    },
+    attack({commit, state}, pl){
+      if (pl.defendTerr.reserves <= pl.whiteLose){
+        commit("conquerTerr", pl)
+        commit("countTerritories")
+        return true
+      }
+      else {
+        commit("attackTerr", pl)
+        return false
       }
     }
   }
