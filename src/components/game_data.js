@@ -1,4 +1,5 @@
 var isOdd = true;
+window.counter = 0
 const gameData = {
   mycolors:
     ["#OOOOOO", "#FF00FF", "#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#FFFFFF", "#764710", "#FF8000"],
@@ -352,6 +353,16 @@ const gameData = {
     }
 
     return {whiteLose, redLose}
+  },
+  checkContinuity(territories, owner, startTerr, list){
+    list.push(startTerr)
+    for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
+      let id = this.territoryInfo[startTerr].borders[i]
+      if (territories[id-1].owner === owner && !list.includes(id)){
+        list.concat(this.checkContinuity(territories, owner, id, list))
+      }
+    }
+    return list
   }
 }
 

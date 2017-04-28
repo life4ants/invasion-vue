@@ -69,7 +69,8 @@
           <button type="button" class="btn btn-default" @click="action">Ok</button>
         </div>
         <div v-else-if="'passTroops' === type" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="action(troops)">Ok</button>
+          <button v-if="title === 'Pass Troops'" type="button" class="btn btn-default" @click="action(0)">Cancel</button>
+          <button type="button" class="btn btn-success" @click="action(troops)">Ok</button>
         </div>
         <div v-else class="modal-footer"> <!-- used by: alert,players, info -->
           <button type="button" class="btn btn-default" @click="close">Ok</button>
@@ -155,7 +156,7 @@
       }
     },
     watch: {
-      show(){
+      type(){
         switch(this.type){
           case "input":
             setTimeout(() => $("#nameInput").trigger("focus"), 0)
@@ -169,8 +170,6 @@
           default:
             window.addEventListener('keyup', this.keyHandler)
         }
-      },
-      title(){
         if (['dicepick1', 'dicepick2'].includes(this.type))
           this.dice = this.data ? 3 : 2
         else if ('passTroops' === this.type)

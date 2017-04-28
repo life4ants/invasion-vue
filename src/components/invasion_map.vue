@@ -4,7 +4,7 @@
   export default {
     name: 'invasionMap',
     props: [
-      'openPopup', 'closePopup', 'setAttackLine'
+      'openPopup', 'closePopup', 'setAttackLine', 'selectPasser', 'selectPassie'
     ],
     data(){
       return {
@@ -25,12 +25,21 @@
           case 'attack2':
             this.selectAttacked(i)
             break
+          case 'pass1':
+            this.selectPasser(i)
+            break
+          case 'pass2':
+            this.selectPassie(i)
+            break
           default:
             if (this.selected)
               $('.territory'+this.selected).removeClass("selected")
-            $('.territory'+i).addClass("selected")
-            this.selected = i
+            this.select(i)
         }
+      },
+      select(territory){
+        $('.territory'+territory).addClass("selected")
+        this.selected = territory
       },
       addTroops(i){
         if (this.game.territories[i-1].owner === this.game.turnIndex)
@@ -42,9 +51,8 @@
         let terr = this.game.territories[i-1]
         if (terr.owner === this.game.turnIndex){
           if (terr.reserves > 1){
-            this.selected = i
+            this.select(i)
             this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
-            $('.territory'+i).addClass("selected")
             this.$store.commit('setPhase', 'attack2')
           }
           else
@@ -57,8 +65,7 @@
         if (this.game.territories[i-1].owner === this.game.turnIndex){
           if (this.game.territories[i-1].reserves > 1){
             $('.territory'+this.selected).removeClass("selected")
-            $('.territory'+i).addClass("selected")
-            this.selected = i
+            this.select(i)
           }
           else
             this.openPopup('alert', 'small-center', 'That territory does not have enough troops to attack!')
@@ -124,15 +131,16 @@
       },
       conquerTerritory(id, dice){
         const reserves = this.game.territories[id-1].reserves
-        if (dice === reserves-1)
+        if (dice === reserves-1){
           this.passTroops(reserves-1)
+        }
         else {
           this.openPopup("passTroops", "small-center", "Territory Conquered!", '',
           (i) => this.passTroops(i), {min: dice, max: reserves-1})
         }
       },
       passTroops(i){
-        this.closeAttack()
+        this.closeAttack();
         const data = {passingTerr: this.attack.attackTerr.id-1, recievingTerr: this.attack.defendTerr.id-1, troops: i}
         this.$store.commit("passTroops", data)
       }
@@ -156,37 +164,37 @@
   }
 
   .territory88.selected {stroke-width: 2px !important;  }
-  .map {stroke: #f00; stroke-width: 0;}
-  .selected{ stroke-width: 3px; opacity: 0.7 }
+  .map {stroke: #fff; stroke-width: 0;}
+  .selected{ stroke-width: 5px; /*opacity: 0.7 */}
   .waterBlue { fill: #99d9ea; }
 
-  .purple1 { fill: #bc6dbc; stroke: #bcbc6d;}
-  .purple2 { fill: #a349a3; stroke: #bcbc6d;}
-  .purple3 { fill: #7d458f; stroke: #bcbc6d;}
-  .purple4 { fill: #8b3f8b; stroke: #bcbc6d;}
+  .purple1 { fill: #bc6dbc;}
+  .purple2 { fill: #a349a3;}
+  .purple3 { fill: #7d458f;}
+  .purple4 { fill: #8b3f8b;}
 
-  .green1 { fill: #53df7d; stroke: #df5f53;}
-  .green2 { fill: #1e9b43; stroke: #df5f53;}
-  .green3 { fill: #125f29; stroke: #df5f53;}
+  .green1 { fill: #53df7d;}
+  .green2 { fill: #1e9b43;}
+  .green3 { fill: #125f29;}
 
-  .red1 { fill: #f1545b; stroke: #5cf154;}
-  .red2 { fill: #ef343e; stroke: #5cf154;}
-  .red3 { fill: #c9101a; stroke: #5cf154;}
+  .red1 { fill: #f1545b;}
+  .red2 { fill: #ef343e;}
+  .red3 { fill: #c9101a;}
 
-  .yellow1 { fill: #ffd237; stroke: #a537ff;}
-  .yellow2 { fill: #ffc90e; stroke: #a537ff;}
-  .yellow3 { fill: #d7a700; stroke: #a537ff;}
-  .yellow4 { fill: #fff200; stroke: #a537ff;}
+  .yellow1 { fill: #ffd237; }
+  .yellow2 { fill: #ffc90e; }
+  .yellow3 { fill: #d7a700; }
+  .yellow4 { fill: #fff200; }
 
-  .brown1 { fill: #ca985e; stroke: #655eca;}
-  .brown2 { fill: #b28050; stroke: #655eca;}
-  .brown3 { fill: #9a6842; stroke: #655eca;}
-  .brown4 { fill: #825034; stroke: #655eca;}
+  .brown1 { fill: #ca985e;}
+  .brown2 { fill: #b28050;}
+  .brown3 { fill: #9a6842;}
+  .brown4 { fill: #825034;}
 
-  .blue1 { fill: #35b8ff; stroke: #ff7835;}
-  .blue2 { fill: #04a5ff; stroke: #ff7835;}
-  .blue3 { fill: #0080ff; stroke: #ff7835;}
-  .blue4 { fill: #0059b3; stroke: #ff7835;}
+  .blue1 { fill: #35b8ff;}
+  .blue2 { fill: #04a5ff;}
+  .blue3 { fill: #0080ff;}
+  .blue4 { fill: #0059b3;}
 
   .light-yellow { fill: #efe4b0; }
 

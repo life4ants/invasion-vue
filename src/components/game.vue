@@ -1,11 +1,14 @@
 <template>
   <div class="game">
-    <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGameButton" :endTurn="confirmEndTurn"
-                :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers" :round="game.round" :attackLine="attackLine">
+    <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGameButton" :endTurn="endTurnButton"
+                :round="game.round" :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers"
+                :attackLine="attackLine" :canCancel="passData.canCancel" :cancelPassTroops="cancelPassTroops">
     </app-header>
     <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
-      <invasion-map :openPopup="openPopup" :closePopup="closePopup" :setAttackLine="setAttackLine"></invasion-map>
+      <invasion-map :openPopup="openPopup" :closePopup="closePopup" :setAttackLine="setAttackLine"
+                    :selectPasser="selectPasser" :selectPassie="selectPassie">
+      </invasion-map>
     </div>
     <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content" :data="popup.data"></popup>
@@ -38,10 +41,10 @@ export default {
   ],
   data(){
     return {
-      selected: null,
       attackLine: ' ',
       popup: {show: false},
-      alert: {show: false}
+      alert: {show: false},
+      passData: {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null}
     }
   },
   mounted(){
@@ -86,16 +89,94 @@ export default {
       this.openPopup('info', 'small', this.currentPlayer.name+"\'s Turn!", output)
     },
 
-    confirmEndTurn(){
-      const content = this.currentPlayer.name+", do you want to pass troops before ending your turn?"
-      this.openPopup("yesnocancel", "small", content, '', (i) => {
-        if (i){
-          this.openPopup('alert', 'small', "Click on a passing territory, then click on a territory to pass the troops to.")
-          this.$store.commit('setPhase', 'pass1')
-        }
+    endTurnButton(){
+      if (['pass1', 'pass2'].includes(this.game.phase)){
+        this.resetPassData()
+        this.showCards()
+        this.endTurn()
+      }
+      else {
+        const content = this.currentPlayer.name+", do you want to pass troops before ending your turn?"
+        this.openPopup("yesnocancel", "small", content, '', (i) => {
+          if (i){
+            this.openPopup('alert', 'small', "Click on a passing territory, then click on a territory to pass the troops to.")
+            this.attackLine = ''
+            this.$store.commit('setPhase', 'pass1')
+          }
+          else {
+            this.showCards()
+            this.endTurn()
+          } })
+      }
+    },
+    endTurn(){
+      this.$store.dispatch('endTurn')
+    },
+    showCards(){
+      console.log("no cards for now")
+    },
+    cancelPassTroops(){
+      this.resetPassData()
+      this.$store.commit("setPhase", "attack1")
+    },
+    cancelThisPass(){
+      $('.selected').removeClass('selected')
+      this.closePopup()
+      this.$store.commit("setPhase", "pass1")
+    },
+    resetPassData(){
+      $('.selected').removeClass('selected')
+      this.passData = {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null}
+    },
+    selectPasser(i){
+      const owner = this.game.territories[i-1].owner
+      if (owner === this.game.turnIndex){
+        $('.territory'+i).addClass("selected")
+        const list = gameData.checkContinuity(this.game.territories, owner, i, [])
+        this.passData.terrs = list
+        this.passData.passer = i
+        this.$store.commit("setPhase", 'pass2')
+      }
+      else
+        this.openPopup('alert', 'small-center','That territory does not belong to you!')
+    },
+    selectPassie(i){
+      const owner = this.game.territories[i-1].owner
+      if (owner === this.game.turnIndex){
+        this.passData.passie = i
+        if (gameData.canFight(this.passData.passer, i))
+          if (this.passData.short < 2)
+            this.passTroopsModal('short', i)
+          else
+            this.passTroopsModal('long', i)
+        else if (this.passData.terrs.includes(i))
+          if (this.passData.long < 1)
+            this.passTroopsModal('long', i)
+          else
+            this.openPopup('alert', 'small-center','You have no long passes remaining!')
         else
-          console.log("no") })
-      //this.$store.commit('nextTurn')
+          this.openPopup('alert', 'small-center','You cannot pass to that territory!')
+      }
+      else
+        this.openPopup('alert', 'small-center','That territory does not belong to you!')
+    },
+    passTroopsModal(type, passie){
+      $('.territory'+passie).addClass("selected")
+      const reserves = this.game.territories[this.passData.passer-1].reserves
+      this.openPopup("passTroops", "small-center", "Pass Troops", '',
+          (i) => {return i > 0 ? this.passTroops(type, i) : this.cancelThisPass()}, {min: 1, max: reserves-1})
+    },
+    passTroops(type, troops){
+      this.passData.canCancel = false
+      this.passData[type]++
+      const data = {passingTerr: this.passData.passer-1, recievingTerr: this.passData.passie-1, troops}
+      this.$store.commit("passTroops", data)
+      $('.selected').removeClass('selected')
+      this.closePopup()
+      if (this.passData.short + this.passData.long >= 3)
+        this.endTurn()
+      else
+        this.$store.commit("setPhase", "pass1")
     },
 
     //============== end game / save game: ==========

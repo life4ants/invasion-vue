@@ -5,7 +5,10 @@
         <span id="tiny">Round</span>
         {{round}}
       </div>
-      <div class="dropdown">
+      <div v-if="['pass1', 'pass2'].includes(phase) && canCancel">
+        <button class="btn btn-default" @click="cancelPassTroops">Cancel Pass Troops</button>
+      </div>
+      <div v-else class="dropdown">
         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
         <span class="caret"></span></button>
         <ul class="dropdown-menu">
@@ -38,7 +41,8 @@ export default {
     icon
   },
   props: [
-    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn', 'alert', 'round', 'attackLine'
+    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn',
+    'alert', 'round', 'attackLine', 'canCancel', 'cancelPassTroops'
   ]
 }
 </script>
@@ -94,6 +98,10 @@ export default {
     position: relative;
     top: 3px;
     margin-left: 4px;
+  }
+
+  .info li{
+    max-width: 240px;
   }
 
   li a{

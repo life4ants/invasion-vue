@@ -135,6 +135,13 @@ export default new Vuex.Store({
         commit("attackTerr", pl)
         return false
       }
+    },
+    endTurn({commit, state}){
+      commit('nextTurn')
+      state.game.phase = 'addTroops'
+      const data = gameData.getReserves(state.game)
+      commit('getReserves', data)
+      state.game.turnMessage = data
     }
   }
 })
