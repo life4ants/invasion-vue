@@ -113,7 +113,10 @@ export default {
       this.$store.dispatch('endTurn')
     },
     showCards(){
-      console.log("no cards for now")
+      if (this.currentPlayer.getsCard)
+        this.$store.commit("drawCard", this.currentPlayer)
+      else
+        this.openPopup("alert", "small", "No card was draw because no territories were taken!")
     },
     cancelPassTroops(){
       this.resetPassData()
@@ -234,15 +237,17 @@ export default {
     },
     saveGame(id){
       let games = JSON.parse(localStorage.invasionGames)
-      if (id != null){
+      if (id === undefined){
+        let id = games.length > 0 ? games[games.length-1].id+1 : 0
+        console.log(id)
+        this.$store.commit('setId', id)
+        games.push(this.game)
+      }
+      else {
         let gameId = games.findIndex((e) => e.id === id)
         if (gameId === -1)
           console.error("error in saving game with id", id)
         games[gameId] = this.game
-      }
-      else{
-        this.$store.commit('setId', games[games.length-1].id+1)
-        games.push(this.game)
       }
       localStorage.setItem('invasionGames', JSON.stringify(games))
     },

@@ -1,9 +1,5 @@
 var isOdd = true;
-window.counter = 0
-const gameData = {
-  mycolors:
-    ["#OOOOOO", "#FF00FF", "#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#FFFFFF", "#764710", "#FF8000"],
-  territoryInfo: [
+var territoryInfo = [
   {name: "placeholder",           borders: [1, 85, 90]},
   {name: "Alaska",                borders: [2, 3]},
   {name: "Yukon Territory",       borders: [1, 3, 4]},
@@ -95,7 +91,22 @@ const gameData = {
   {name: "Bahamas",               borders: [31, 87, 90]},
   {name: "Haiti",                 borders: [86, 87, 90]},
   {name: "Dominican Republic",    borders: [88, 89]}
-  ],
+  ]
+
+  function initializeCards(){
+    let cards = [];
+    for (let i=0; i<90; i++){
+      cards[i] = {"case": i % 3, "name": territoryInfo[i+1].name, "number": i+1};
+    }
+    for (let i=91; i<95; i++)
+      cards[i] = {"case": 3, "name": "Wild", "number": i};
+    return cards;
+  }
+
+  const gameData = {
+  mycolors: ["#OOOOOO", "#FF00FF", "#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#FFFFFF", "#764710", "#FF8000"],
+  cards: initializeCards(),
+  territoryInfo: territoryInfo,
 
   canFight(country1, country2){
     for (let i = 0; i<this.territoryInfo[country1].borders.length; i++){
@@ -105,7 +116,8 @@ const gameData = {
     return false;
   },
 
-  shuffle(array){
+  shuffle(input){
+    let array = input.slice()
     let ran = Math.floor(Math.random() * array.length);
     let temp = array[0];
     array[0] = array[ran];
@@ -367,22 +379,29 @@ const gameData = {
 }
 
 export default gameData
-window.test = function(){
+window.test = function(x){
+  if (x != 1 && x != 2){
+    console.log("please give a 1 or 2 as an argument")
+    return
+  }
   for (var k=2; k<9; k++){
     var players = []
     for (var i=0; i<k; i++){
       players.push({reserves: 0, tempReserves: 0, terrCount: 0})
     }
     var data = gameData.setUpGame(players)
-    console.log(JSON.stringify(data.players, null, 2))
-    // console.log(k+" players:")
-    // for (var i=0; i<data.players.length; i++){
-    //   console.log('\nplayer '+i+":")
-    //   console.log("territories: "+data.players[i].terrCount)
-    //   console.log('reserves: '+data.players[i].reserves)
-    //   if (i === data.turnIndex)
-    //     console.log('goes first')
-    // }
+    if (x === 1)
+      console.log(JSON.stringify(data.players, null, 2))
+    else {
+      console.log(k+" players:")
+      for (var i=0; i<data.players.length; i++){
+        console.log('\nplayer '+i+":")
+        console.log("territories: "+data.players[i].terrCount)
+        console.log('reserves: '+data.players[i].reserves)
+        if (i === data.turnIndex)
+          console.log('goes first')
+      }
+    }
   }
 }
 window.testReserves = (turnIndex) => {

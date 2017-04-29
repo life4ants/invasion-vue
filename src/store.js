@@ -7,7 +7,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     game: {},
-    version: '0.3.0'
+    version: 3
   },
   getters: {
     game(state){
@@ -21,14 +21,15 @@ export default new Vuex.Store({
     //==========Saving and Creating Games: ============
     createGame(state, playerNames){
       const data = gameData.setUpGame(playerNames)
-      state.game = {version: '0.03', //change to any value in game needs to up version number
+      state.game = {version: 3, //change to any value in game needs to up version number
                     id: null,
                     name: '',
                     nextCard: 0,
+                    canTurnInCards: false,
                     players: data.players,
                     phase: 'initialTroops',
                     round: 0,
-                    shuffledCards: [],
+                    shuffledCards: gameData.shuffle(gameData.cards),
                     territories: data.territories,
                     turnIndex: data.turnIndex,
                     turnMessage: null
@@ -36,6 +37,8 @@ export default new Vuex.Store({
     },
     loadGame(state, game){
       state.game = game
+      if (game.version != state.version)
+        console.log("loading an old game")
     },
     setName(state, name){
       state.game.name = name
@@ -94,6 +97,10 @@ export default new Vuex.Store({
       for (let i = 0; i<counts.length; i++){
         state.game.players[i].terrCount = counts[i]
       }
+    },
+    drawCard(state, player){
+      state.players[player].cards.push(state.game.nextCard)
+      state.game.nextCard++
     }
   },
   actions: {
@@ -112,6 +119,7 @@ export default new Vuex.Store({
           state.game.phase = 'addTroops'
           const data = gameData.getReserves(state.game)
           commit('getReserves', data)
+          state.game.canTurnInCards = true
           state.game.turnMessage = data
         }
       }
@@ -129,10 +137,12 @@ export default new Vuex.Store({
       if (pl.defendTerr.reserves <= pl.whiteLose){
         commit("conquerTerr", pl)
         commit("countTerritories")
+        state.game.players[state.game.turnIndex].getsCard = true
         return true
       }
       else {
         commit("attackTerr", pl)
+        state.game.canTurnInCards = false
         return false
       }
     },
@@ -141,6 +151,7 @@ export default new Vuex.Store({
       state.game.phase = 'addTroops'
       const data = gameData.getReserves(state.game)
       commit('getReserves', data)
+      state.game.canTurnInCards = true
       state.game.turnMessage = data
     }
   }

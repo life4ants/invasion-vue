@@ -3,6 +3,8 @@
     <div>
       <popup :show="popup.show" :close="closePopup" :action="popup.action" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content"></popup>
+      <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
+            width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     </div>
     <h1>Welcome to Invasion!</h1>
     <p>This is a super cool game!</p>
@@ -33,17 +35,19 @@
 
 <script>
 import popup from './popup'
+import alert from './Alert'
 
 export default {
   name: 'dashboard',
-  components: { popup },
+  components: { popup, alert },
   props: [
     'start', 'skip', 'games', "startGame"
   ],
   data(){
     return {
       edit: false,
-      popup: {show: false}
+      popup: {show: false},
+      alert: {show: false}
     }
   },
   methods: {
@@ -52,6 +56,12 @@ export default {
     },
     closeEdit(){
       this.edit = false
+    },
+    openAlert(content){
+      this.alert = {show: true, content}
+    },
+    closeAlert(){
+      this.alert.show = false
     },
     openPopup(type, size, title, content, action){
       this.popup = {show: true, type, size, title, content, action}
@@ -78,7 +88,8 @@ export default {
       const name = this.games[id].name
       this.games.splice(id, 1)
       localStorage.setItem('invasionGames', JSON.stringify(this.games))
-      this.openPopup('alert', 'small', name+" was successfully deleted.")
+      this.closePopup()
+      this.openAlert(name+" was successfully deleted.")
     }
   }
 }

@@ -77,7 +77,8 @@ export default {
       if (this.step === 1){
         this.players = []
         for (let i=0; i<this.numOfPlayers; i++){
-          this.players[i] = {name: '', code: -1, terrCount: 0, cards: []} //change here needs to up version number
+          this.players[i] = {name: '', code: -1, terrCount: 0,
+          cards: [], getsCard: false, mustTurnInCards: false} //change here needs to up version number
         }
         this.code = -1
         this.step++
@@ -97,7 +98,7 @@ export default {
         else if (verify === 'OK'){
           this.players[this.currentPlayer].code = this.code
           const players = this.players
-          this.shuffledPlayers = GameData.shuffle(players.slice())
+          this.shuffledPlayers = GameData.shuffle(players)
           this.step++
           this.error = ''
         }
