@@ -98,8 +98,8 @@ var territoryInfo = [
     for (let i=0; i<90; i++){
       cards[i] = {"case": i % 3, "name": territoryInfo[i+1].name, "number": i+1};
     }
-    for (let i=91; i<95; i++)
-      cards[i] = {"case": 3, "name": "Wild", "number": i};
+    for (let i=90; i<94; i++)
+      cards[i] = {"case": 3, "name": "Wild", "number": i+1};
     return cards;
   }
 
@@ -375,10 +375,30 @@ var territoryInfo = [
       }
     }
     return list
+  },
+  checkSetOfCards(cards){
+    if (cards.length < 3)
+      return false
+    var man = 0, horse = 0, cannon = 0;
+    for (var i = 0; i<cards.length; i++){
+      if (this.cards[cards[i]].case === 3)
+        return true // if one is a wild, we have a match
+      else if (this.cards[cards[i]].case === 0)
+        man++
+      else if (this.cards[cards[i]].case === 1)
+        horse++
+      else if (this.cards[cards[i]].case === 2)
+        cannon++
+    }
+    if ((cannon >= 3 || man >= 3 || horse >= 3) || (cannon >= 1 && man >= 1 && horse >= 1))
+        return true
+    else
+        return false
   }
 }
 
 export default gameData
+window.cards = initializeCards()
 window.test = function(x){
   if (x != 1 && x != 2){
     console.log("please give a 1 or 2 as an argument")
@@ -403,6 +423,13 @@ window.test = function(x){
       }
     }
   }
+}
+window.testCards = (ar) => {
+  for (let i=0; i< 3; i++){
+    console.log(gameData.territoryInfo[ar[i]].name)
+    console.log(gameData.cards[ar[i]].case)
+  }
+  return gameData.checkSetOfCards(ar)
 }
 window.testReserves = (turnIndex) => {
 let territories = []

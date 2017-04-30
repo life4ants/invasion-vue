@@ -7,8 +7,10 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     game: {},
-    version: 3
+    version: 4
   },
+
+
   getters: {
     game(state){
       return () => state.game
@@ -17,15 +19,23 @@ export default new Vuex.Store({
       return () => state.game.turnMessage
     }
   },
+
+
   mutations: {
+    setPhase(state, phase){
+      state.game.phase = phase
+    },
+
     //==========Saving and Creating Games: ============
     createGame(state, playerNames){
       const data = gameData.setUpGame(playerNames)
-      state.game = {version: 3, //change to any value in game needs to up version number
+      state.game = {version: 4, //change to any value in game needs to up version number
                     id: null,
                     name: '',
                     nextCard: 0,
                     canTurnInCards: false,
+                    cardSetValue: 4,
+                    gameOver: false,
                     players: data.players,
                     phase: 'initialTroops',
                     round: 0,
@@ -36,9 +46,13 @@ export default new Vuex.Store({
                   }
     },
     loadGame(state, game){
+      if (game.version === 3){
+        game.cardSetValue = 4
+        game.version = 4
+        game.gameOver = false
+        console.log("upgraded version 3 game to version 4")
+      }
       state.game = game
-      if (game.version != state.version)
-        console.log("loading an old game")
     },
     setName(state, name){
       state.game.name = name
@@ -47,10 +61,7 @@ export default new Vuex.Store({
       state.game.id = id
     },
 
-    //=============== other: ==========
-    setPhase(state, phase){
-      state.game.phase = phase
-    },
+    //=============== beginning of turn: ==========
     addTroops(state, pl){
       let player = state.game.players[pl.turnIndex]
       state.game.territories[pl.terrId].reserves += 1
@@ -59,19 +70,33 @@ export default new Vuex.Store({
         player.tempReserves --
       state.game.players[pl.turnIndex] = player
     },
-    nextTurn(state){
-      let turnIndex = state.game.turnIndex
-      turnIndex++
-      if (turnIndex >= state.game.players.length){
-        turnIndex = 0
-        if (state.game.phase != 'initialTroops')
-          state.game.round++
-      }
-      state.game.turnIndex = turnIndex
-    },
     getReserves(state, pl){
       state.game.players[state.game.turnIndex].reserves = pl.countryPoints + pl.conPoints
     },
+    turnInCards(state, pl){
+      let cards = pl.ids
+      let player = state.game.players[state.game.turnIndex]
+      for (let i=cards.length-1; i>=0; i--){
+        let terr = state.game.territories[pl.values[i]]
+        if (terr.owner === state.game.turnIndex)
+          console.log("you own "+gameData.territoryInfo[terr.id].name)
+        else
+          console.log("you don\'t own "+gameData.territoryInfo[terr.id].name)
+        player.cards.splice(cards[i], 1)
+      }
+      console.log("cards removed")
+    },
+    upCardSetValue(state){
+      let value = state.game.cardSetValue
+      if (value < 12)
+        value += 2
+      else if (value < 15)
+        value += 3
+      else
+        value += 5
+    },
+
+    //============ attacking and conquering: =======
     conquerTerr(state, pl){
       const attackTerr = state.game.territories[pl.attackTerr.id-1]
       const defendTerr = state.game.territories[pl.defendTerr.id-1]
@@ -98,11 +123,27 @@ export default new Vuex.Store({
         state.game.players[i].terrCount = counts[i]
       }
     },
+
+    // ============ end of turn: ==========
     drawCard(state, player){
-      state.players[player].cards.push(state.game.nextCard)
+      state.game.players[player].cards.push(state.game.nextCard)
       state.game.nextCard++
+      state.game.players[player].getsCard = false
+    },
+    nextTurn(state){
+      let turnIndex = state.game.turnIndex
+      turnIndex++
+      if (turnIndex >= state.game.players.length){
+        turnIndex = 0
+        if (state.game.phase != 'initialTroops'){//put stuff that happens at the end of every turn here
+          state.game.round++
+        }
+      }
+      state.game.turnIndex = turnIndex
     }
   },
+
+
   actions: {
     initialTroops({commit, state}, pl){
       let player = state.game.players[pl.turnIndex]
@@ -134,6 +175,7 @@ export default new Vuex.Store({
       }
     },
     attack({commit, state}, pl){
+      state.game.canTurnInCards = false
       if (pl.defendTerr.reserves <= pl.whiteLose){
         commit("conquerTerr", pl)
         commit("countTerritories")
@@ -142,7 +184,6 @@ export default new Vuex.Store({
       }
       else {
         commit("attackTerr", pl)
-        state.game.canTurnInCards = false
         return false
       }
     },

@@ -19,6 +19,15 @@
             </li>
           </ul>
         </div>
+        <div v-else-if="['cards', 'turnInCards'].includes(type)" class="modal-body">
+          <div v-if="type === 'turnInCards'">
+            <label>Please select three cards to turn in: </label>
+          </div>
+          <div class="cardBox">
+            <card v-for="(card, key) in data" :value="card" :key="key" :index="key" :clickHandler="selectCard"></card>
+          </div>
+          <span style="float: right;"><i>{{error}}</i></span>
+        </div>
         <div v-else-if="'passTroops' === type" class="modal-body">
           <label>Enter number of Troops to pass:</label>
           <input id="troops" type="number"  @keyup.enter="action(troops)"
@@ -52,9 +61,9 @@
           <button type="button" class="btn btn-success" @click="action(false)">No</button>
           <button type="button" class="btn btn-primary" @click="action(true)">Yes</button>
         </div>
-        <div v-else-if="'input' === type" class="modal-footer">
+        <div v-else-if="['input', 'turnInCards'].includes(type)" class="modal-footer">
           <button type="button" class="btn btn-default" @click="cancel">Cancel</button>
-          <button type="button" class="btn btn-primary" @click="checkName">Ok</button>
+          <button type="button" class="btn btn-primary" @click="checkValue">Ok</button>
         </div>
         <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-footer">
           <button v-if="'dicepick1' === type" type="button" class="btn btn-default" @click="action(0)">Cancel</button>
@@ -65,7 +74,7 @@
           <button type="button" class="btn btn-danger" @click="action(false)">Don't Save</button>
           <button type="button" class="btn btn-primary" @click="action(true)">Save Game</button>
         </div>
-        <div v-else-if="'callback' === type" class="modal-footer">
+        <div v-else-if="['callback', 'cards'].includes(type)" class="modal-footer">
           <button type="button" class="btn btn-default" @click="action">Ok</button>
         </div>
         <div v-else-if="'passTroops' === type" class="modal-footer">
@@ -84,14 +93,17 @@
 
 <script>
   import icon from './icon'
+  import card from './card'
+  import gameData from './game_data.js'
 
   export default {
     name: 'popup',
     components: {
-      icon
+      icon, card
     },
+// All Types: alert, confirm, input, players, yesno, yesnocancel, info, dicepick1, dicepick2, passtroop, callback, cards, turnInCards
     props: [
-      'title', 'content', 'type', // alert, confirm, input, players, yesno, info, dicepick1, dicepick2
+      'title', 'content', 'type',
       'players', 'show', 'close',
       'action', 'size', 'data'
     ],
@@ -100,10 +112,32 @@
         name: '',
         error: '',
         dice: null,
-        troops: null
+        troops: null,
+        selectedCards: []
       }
     },
     methods: {
+      checkValue(){
+        if (this.type === 'input')
+          this.checkName()
+        else
+          this.checkCards()
+      },
+      checkCards(){
+        if (this.selectedCards.length != 3)
+          this.error = "Please select exactly three cards"
+        else {
+          let cards = this.selectedCards.sort().map((val) => this.data[val]-1)
+          if (gameData.checkSetOfCards(cards)){
+            this.$store.commit('turnInCards', {ids: this.selectedCards, values: cards})
+            this.error = ''
+            this.selectedCards = []
+            this.action()
+          }
+          else
+            this.error = "Those cards don't match!"
+        }
+      },
       checkName(){
         if (this.name.length < 3)
           this.error = 'name must be 3-22 letters long'
@@ -115,12 +149,20 @@
         }
       },
       cancel(){
+        this.selectedCards = []
         this.error = ''
         this.name = ''
         this.action(false)
       },
-      test(i){
-        console.log(i)
+      selectCard(i){
+        if ($("#card"+i).hasClass('selected')){
+          $("#card"+i).removeClass('selected')
+          this.selectedCards.splice(this.selectedCards.indexOf(i), 1)
+        }
+        else {
+          $("#card"+i).addClass('selected')
+          this.selectedCards.push(i)
+        }
       },
       keyHandler(event) {
         if (event.key === "Enter") {
@@ -199,6 +241,7 @@
   }
   .modal {
     transition: all 0.4s ease;
+    overflow: scroll;
   }
   label {
     margin-right: 8px;
@@ -208,5 +251,10 @@
   }
   #troops {
     width: 45px;
+  }
+  .cardBox{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 </style>

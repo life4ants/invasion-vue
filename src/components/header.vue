@@ -6,19 +6,22 @@
         {{round}}
       </div>
       <div v-if="['pass1', 'pass2'].includes(phase) && canCancel">
-        <button class="btn btn-default" @click="cancelPassTroops">Cancel Pass Troops</button>
+        <button class="btn btn-default" @click="menu('CPT')">Cancel Pass Troops</button>
       </div>
       <div v-else class="dropdown">
         <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
         <span class="caret"></span></button>
         <ul class="dropdown-menu">
-          <li><a class='btn-default' @click="endGame">Exit Game</a></li>
-          <li><a class='btn-default' @click="saveGame">Save Game</a></li>
-          <li><a class='btn-default' @click="playersInfo">Players Info</a></li>
+          <li><a class='btn-default' @click="menu('EG')">Exit Game</a></li>
+          <li><a class='btn-default' @click="menu('SG')">Save Game</a></li>
+          <li :class="{disabled: !canTurnInCards}"><a class="btn-default" @click="menu('TIC')">Turn In Cards</a></li>
+          <li><a class='btn-default' @click="menu('SMC')">See my Cards</a></li>
+          <li><a class='btn-default' @click="menu('PI')">Players Info</a></li>
+          <li><a class='btn-default' @click="menu()">give me a card!</a></li>
         </ul>
       </div>
       <div>
-        <button class="btn btn-success" @click="endTurn">End Turn</button>
+        <button class="btn btn-success" @click="menu('ET')">End Turn</button>
       </div>
       <ul class="info">
         <li><strong>Current Player: </strong>{{player.name}}<icon :code="player.code" :size="18"></icon></li>
@@ -41,8 +44,7 @@ export default {
     icon
   },
   props: [
-    'phase', 'endGame', 'saveGame', 'player', 'playersInfo', 'endTurn',
-    'alert', 'round', 'attackLine', 'canCancel', 'cancelPassTroops'
+    'phase', 'player', 'alert', 'round', 'attackLine', 'canCancel', 'menu', 'canTurnInCards'
   ]
 }
 </script>
@@ -86,7 +88,7 @@ export default {
     font-size: 25px;
     height: 47px;
     width: 45px;
-    line-height: 17px;
+    line-height: 15px;
     font-weight: 500;
   }
 
@@ -107,5 +109,4 @@ export default {
   li a{
     cursor: pointer;
   }
-
 </style>

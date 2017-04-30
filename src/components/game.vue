@@ -1,8 +1,7 @@
 <template>
   <div class="game">
-    <app-header :phase='game.phase' :endGame='confirmEndGame' :saveGame="saveGameButton" :endTurn="endTurnButton"
-                :round="game.round" :player="game.players[game.turnIndex]" :playersInfo="showAllPlayers"
-                :attackLine="attackLine" :canCancel="passData.canCancel" :cancelPassTroops="cancelPassTroops">
+    <app-header :phase='game.phase' :round="game.round" :player="game.players[game.turnIndex]" :canTurnInCards="game.canTurnInCards"
+                :attackLine="attackLine" :canCancel="passData.canCancel" :menu="buttonRouter">
     </app-header>
     <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
@@ -64,8 +63,36 @@ export default {
   },
   methods: {
     keyHandler(e){
-      if (e.key === "x"){
+      if (e.key === "x" && !this.popup.show){
         console.log("you pushed the button!")
+      }
+    },
+    buttonRouter(i){
+      switch(i){
+        case 'ET':
+          this.endTurnButton()
+          break
+        case 'EG':
+          this.confirmEndGame()
+          break
+        case 'SG':
+          this.saveGameButton()
+          break
+        case 'PI':
+          this.showAllPlayers()
+          break
+        case 'CPT':
+          this.cancelPassTroops()
+          break
+        case 'TIC':
+          this.turnInCards()
+          break
+        case 'SMC':
+          this.showCards(false)
+          break
+        default:
+          this.$store.commit("drawCard", this.game.turnIndex)
+          console.error(i+" is not assigned")
       }
     },
     setAttackLine(text, erase){
@@ -89,11 +116,11 @@ export default {
       this.openPopup('info', 'small', this.currentPlayer.name+"\'s Turn!", output)
     },
 
+    // ========== End Turn logic: ===============
     endTurnButton(){
       if (['pass1', 'pass2'].includes(this.game.phase)){
         this.resetPassData()
-        this.showCards()
-        this.endTurn()
+        this.drawCard()// which will call endTurn()
       }
       else {
         const content = this.currentPlayer.name+", do you want to pass troops before ending your turn?"
@@ -104,20 +131,41 @@ export default {
             this.$store.commit('setPhase', 'pass1')
           }
           else {
-            this.showCards()
-            this.endTurn()
+            this.drawCard()// which will call endTurn()
           } })
       }
     },
     endTurn(){
       this.$store.dispatch('endTurn')
     },
-    showCards(){
-      if (this.currentPlayer.getsCard)
-        this.$store.commit("drawCard", this.currentPlayer)
+    drawCard(){
+      if (this.currentPlayer.getsCard){
+        this.$store.commit("drawCard", this.game.turnIndex)
+        this.showCards(true)
+      }
       else
-        this.openPopup("alert", "small", "No card was draw because no territories were taken!")
+        this.openPopup("callback", "small", "No card was drawn because no territories were taken!", '', () => this.endTurn())
     },
+    showCards(endTurn){
+      let action = endTurn ? () => this.endTurn() : () => this.closePopup()
+      let cards = this.currentPlayer.cards.map((val) => this.game.shuffledCards[val].number)
+      this.openPopup('cards', '', this.currentPlayer.name+"\'s Cards", '', action, cards)
+    },
+    turnInCards(){
+      let lowcards = []
+      let highcards = []
+      let cards = this.currentPlayer.cards
+      for (let i=0; i<cards.length; i++){
+        lowcards.push(this.game.shuffledCards[cards[i]].number-1)
+        highcards.push(this.game.shuffledCards[cards[i]].number)
+      }
+      if (gameData.checkSetOfCards(lowcards))
+        this.openPopup('turnInCards', '', "Turn In Cards", '', () => this.closePopup(), highcards)
+      else
+        this.openPopup("alert", "small", "You do not have a set of cards to turn in!")
+    },
+
+    //============== Passing Troops: =============
     cancelPassTroops(){
       this.resetPassData()
       this.$store.commit("setPhase", "attack1")
