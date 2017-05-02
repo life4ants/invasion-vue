@@ -109,4 +109,7 @@ export default {
   li a{
     cursor: pointer;
   }
+  .disabled {
+    pointer-events: none;
+  }
 </style>

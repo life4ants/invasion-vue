@@ -127,9 +127,9 @@
         if (this.selectedCards.length != 3)
           this.error = "Please select exactly three cards"
         else {
-          let cards = this.selectedCards.sort().map((val) => this.data[val]-1)
+          let cards = this.selectedCards.sort().map((val) => this.data[val]-1)//LOW values
           if (gameData.checkSetOfCards(cards)){
-            this.$store.commit('turnInCards', {ids: this.selectedCards, values: cards})
+            this.$store.dispatch('turnInCards', {ids: this.selectedCards, values: cards})
             this.error = ''
             this.selectedCards = []
             this.action()

@@ -103,17 +103,33 @@ export default {
     },
 
     showReservesMessage(){
-      const data = this.game.turnMessage
-      const content = "<p><strong>"+this.currentPlayer.name +", it is your turn.</strong> You have "+this.currentPlayer.terrCount+
+      const data = this.game.turnMessage.data
+      let content = "<p><strong>"+this.currentPlayer.name +", it is your turn.</strong> You have "+this.currentPlayer.terrCount+
                     " territories. This gives you "+data.countryPoints+" troops.</p>"
-      let regions = data.messages.length === 0 ? '' :
-                "You also get "+data.conPoints+" troops for owning "+data.messages.length+" Regions: "
-      let output = content+regions+"<ul>"
-      for (let i=0; i<data.messages.length; i++){
-        output+= "<li>"+data.messages[i]+"</li>"
+      if (data.messages.length === 1)
+        content += "<p>You also get "+data.messages[0]+".</p>"
+      else if (data.messages.length > 1){
+        content += "You also get "+data.conPoints+" troops for owning "+data.messages.length+" Regions: <ul>"
+        for (let i=0; i<data.messages.length; i++){
+          content+= "<li>"+data.messages[i]+"</li>"
+        }
+        content += "</ul>"
       }
-      output+="</ul><strong>You have a total of "+(data.countryPoints+data.conPoints)+" troops to distribute.</strong>"
-      this.openPopup('info', 'small', this.currentPlayer.name+"\'s Turn!", output)
+      content+="<strong>You have a total of "+(data.countryPoints+data.conPoints)+" troops to distribute.</strong>"
+      this.openPopup('info', 'small', this.currentPlayer.name+"\'s Turn!", content)
+    },
+
+    showCardsMessage(){
+      const data = this.turnMessage.data
+      let content = "<p>"+this.currentPlayer.name+", you get "+data.reserves+" troops for turning in cards.</p>"
+      if (data.ids.length > 0)
+        content += "Troops have been added to "+(data.ids.length === 1 ? "this territory " : "these territories ")+"that you own:"
+      content += "<ul>"
+      for (let i=0; i<data.ids.length; i++){
+        content+= "<li>2 Troops on "+gameData.territoryInfo[data.ids[i]].name+"</li>"
+      }
+      content+="</ul><strong>You have a total of "+(this.currentPlayer.reserves)+" troops to distribute.</strong>"
+      this.openPopup('info', 'small', "Cards were turned in", content)
     },
 
     // ========== End Turn logic: ===============
@@ -129,6 +145,7 @@ export default {
             this.openPopup('alert', 'small', "Click on a passing territory, then click on a territory to pass the troops to.")
             this.attackLine = ''
             this.$store.commit('setPhase', 'pass1')
+            $(".selected").removeClass("selected")
           }
           else {
             this.drawCard()// which will call endTurn()
@@ -152,17 +169,19 @@ export default {
       this.openPopup('cards', '', this.currentPlayer.name+"\'s Cards", '', action, cards)
     },
     turnInCards(){
-      let lowcards = []
-      let highcards = []
-      let cards = this.currentPlayer.cards
-      for (let i=0; i<cards.length; i++){
-        lowcards.push(this.game.shuffledCards[cards[i]].number-1)
-        highcards.push(this.game.shuffledCards[cards[i]].number)
+      if (this.game.canTurnInCards){
+        let lowcards = []
+        let highcards = []
+        let cards = this.currentPlayer.cards
+        for (let i=0; i<cards.length; i++){
+          lowcards.push(this.game.shuffledCards[cards[i]].number-1)
+          highcards.push(this.game.shuffledCards[cards[i]].number)
+        }
+        if (gameData.checkSetOfCards(lowcards))
+          this.openPopup('turnInCards', '', "Turn In Cards", '', () => this.closePopup(), highcards)
+        else
+          this.openPopup("alert", "small", "You do not have a set of cards to turn in!")
       }
-      if (gameData.checkSetOfCards(lowcards))
-        this.openPopup('turnInCards', '', "Turn In Cards", '', () => this.closePopup(), highcards)
-      else
-        this.openPopup("alert", "small", "You do not have a set of cards to turn in!")
     },
 
     //============== Passing Troops: =============
@@ -225,7 +244,7 @@ export default {
       $('.selected').removeClass('selected')
       this.closePopup()
       if (this.passData.short + this.passData.long >= 3)
-        this.endTurn()
+        this.drawCard()
       else
         this.$store.commit("setPhase", "pass1")
     },
@@ -319,17 +338,23 @@ export default {
   },
   watch: {
     turnMessage(){
-      if (this.game.phase === 'initialTroops'){
-        const troops = this.currentPlayer.tempReserves
-        const content = this.currentPlayer.name + ", now it is your turn to distribute " +(troops > 1 ? troops+" troops.": troops+" troop.")
-        this.openPopup('alert', 'small-center', content)
-      }
-      else if (this.game.phase === 'addTroops'){
-        this.showReservesMessage()
-      }
-      else if (this.game.phase === 'attack1'){
-        const content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
-        this.openPopup('info', 'small-center', 'Distribution Complete', content)
+      switch (this.game.turnMessage.type){
+        case 'InTrps':
+          const troops = this.currentPlayer.tempReserves
+          let content = this.currentPlayer.name + ", now it is your turn to distribute " +(troops > 1 ? troops+" troops.": troops+" troop.")
+          this.openPopup('alert', 'small-center', content)
+          break
+        case 'Trps':
+          this.showReservesMessage()
+          break
+        case 'StTurn':
+          content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
+          this.openPopup('info', 'small-center', 'Distribution Complete', content)
+          break
+        case 'Cards':
+          this.showCardsMessage()
+          break
+        default:
       }
     }
   },

@@ -360,8 +360,8 @@ var territoryInfo = [
     }
     else if (tie > 0)
     {
-      if (isOdd) {redLose++; isOdd = false; console.log('isEven')}
-      else {whiteLose++; isOdd = true; console.log('isOdd')}
+      if (isOdd) {redLose++; isOdd = false}
+      else {whiteLose++; isOdd = true}
     }
 
     return {whiteLose, redLose}

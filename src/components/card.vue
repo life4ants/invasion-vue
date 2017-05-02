@@ -44,6 +44,6 @@ img {
   padding: 10px;
 }
 .selected{
-  border: 3px solid red;
+  border: 3px dashed red;
 }
 </style>

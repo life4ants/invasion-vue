@@ -66,6 +66,7 @@
           if (this.game.territories[i-1].reserves > 1){
             $('.territory'+this.selected).removeClass("selected")
             this.select(i)
+            this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
           }
           else
             this.openPopup('alert', 'small-center', 'That territory does not have enough troops to attack!')
@@ -143,6 +144,11 @@
         this.closeAttack();
         const data = {passingTerr: this.attack.attackTerr.id-1, recievingTerr: this.attack.defendTerr.id-1, troops: i}
         this.$store.commit("passTroops", data)
+        this.$store.dispatch("checkForEliminatedPlayers").then((data) => {
+          if (data[0]){
+            this.openPopup("alert", "small-center", "You eliminated "+data[1]+".")
+          }
+        })
       }
     },
     computed: {
