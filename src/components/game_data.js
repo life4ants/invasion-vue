@@ -152,50 +152,50 @@ var territoryInfo = [
 
   asignReserves(players){
     let ar = []
-    // switch(players.length){ //the real stuff
-    //   case 2:
-    //     ar = [10, 0, 58, 58]
-    //     break
-    //   case 3:
-    //     ar = [9, 0, 42, 42, 42]
-    //     break
-    //   case 4:
-    //     ar = [9, 2, 36, 36, 37, 37]
-    //     break
-    //   case 5:
-    //     ar = [9, 0, 33, 33, 33, 33, 33]
-    //     break
-    //   case 6:
-    //     ar = [8, 0, 30, 30, 30, 30, 30, 30]
-    //     break
-    //   case 7:
-    //     ar = [5, 6, 27, 27, 27, 27, 27, 27, 28]
-    //     break
-    //   case 8:
-    //     ar = [5, 2, 24, 24, 25, 25, 25, 25, 25, 25]
-    // }
-    switch(players.length){ // for easy testing:
+    switch(players.length){ //the real stuff
       case 2:
-        ar = [5, 0, 17, 17]
+        ar = [10, 0, 58, 58]
         break
       case 3:
-        ar = [5, 0, 12, 12, 12]
+        ar = [9, 0, 42, 42, 42]
         break
       case 4:
-        ar = [5, 2, 12, 12, 13, 13]
+        ar = [9, 2, 36, 36, 37, 37]
         break
       case 5:
-        ar = [5, 0, 12, 12, 12, 12, 12]
+        ar = [9, 0, 33, 33, 33, 33, 33]
         break
       case 6:
-        ar = [5, 0, 9, 9, 9, 9, 9, 9]
+        ar = [8, 0, 30, 30, 30, 30, 30, 30]
         break
       case 7:
-        ar = [3, 6, 7, 7, 7, 7, 7, 7, 8]
+        ar = [5, 6, 27, 27, 27, 27, 27, 27, 28]
         break
       case 8:
-        ar = [3, 2, 4, 4, 5, 5, 5, 5, 5, 5]
+        ar = [5, 2, 24, 24, 25, 25, 25, 25, 25, 25]
     }
+    // switch(players.length){ // for easy testing:
+    //   case 2:
+    //     ar = [5, 0, 17, 17]
+    //     break
+    //   case 3:
+    //     ar = [5, 0, 12, 12, 12]
+    //     break
+    //   case 4:
+    //     ar = [5, 2, 12, 12, 13, 13]
+    //     break
+    //   case 5:
+    //     ar = [5, 0, 12, 12, 12, 12, 12]
+    //     break
+    //   case 6:
+    //     ar = [5, 0, 9, 9, 9, 9, 9, 9]
+    //     break
+    //   case 7:
+    //     ar = [3, 6, 7, 7, 7, 7, 7, 7, 8]
+    //     break
+    //   case 8:
+    //     ar = [3, 2, 4, 4, 5, 5, 5, 5, 5, 5]
+    // }
     for (let i=0; i<players.length; i++){
       players[i].reserves = ar[i+2]
       players[i].tempReserves = ar[0]

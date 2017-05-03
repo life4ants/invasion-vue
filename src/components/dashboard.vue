@@ -5,11 +5,16 @@
            :type="popup.type" :title="popup.title" :content="popup.content"></popup>
       <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
-      <test v-if="test"></test>
     </div>
     <h1>Welcome to Invasion!</h1>
-    <p>This is a super cool game!</p>
-    <button @click='tester' class="btn btn-success">Test</button>
+    <p>Welcome Chingus! :) This is a game based on Risk. It is still in beta, you could say, but it is fully playable.</p>
+    <p>Feel free to give feedback on anything - button colors, overall look, sound volume, anything!</p>
+    Coming soon:
+    <ul>
+      <li>AI players</li>
+      <li>Responsive for phones</li>
+      <li>Game and Player settings</li>
+    </ul><br><br>
     <button @click='start' class="btn in-brown">Start New Game</button>
     <h3>Saved Games:</h3>
     <ul v-if="edit">
@@ -37,11 +42,10 @@
 <script>
 import popup from './popup'
 import alert from './Alert'
-import test from './test'
 
 export default {
   name: 'dashboard',
-  components: { popup, alert, test },
+  components: { popup, alert },
   props: [
     'start', 'games', "startGame"
   ],
@@ -49,16 +53,12 @@ export default {
     return {
       edit: false,
       popup: {show: false},
-      alert: {show: false},
-      test: false
+      alert: {show: false}
     }
   },
   methods: {
     editGames(){
       this.edit = true
-    },
-    tester(){
-      this.test = true
     },
     closeEdit(){
       this.edit = false
@@ -120,6 +120,9 @@ export default {
     #col{
       columns: 2;
     }
+  }
+  p {
+    text-align: left;
   }
 
 </style>

@@ -1,6 +1,7 @@
 
 <script>
   import gameData from "./game_data.js"
+  import sounds from "./sounds.js"
   export default {
     name: 'invasionMap',
     props: [
@@ -40,8 +41,10 @@
         this.selected = territory
       },
       addTroops(i){
-        if (this.game.territories[i-1].owner === this.game.turnIndex)
+        if (this.game.territories[i-1].owner === this.game.turnIndex){
           this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
+          sounds.playTroops()
+        }
         else
           this.openPopup('alert', 'small-center','That territory does not belong to you!')
       },
@@ -52,6 +55,7 @@
             this.select(i)
             this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
             this.$store.commit('setPhase', 'attack2')
+            sounds.attack1.play()
           }
           else
             this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
@@ -71,8 +75,10 @@
         }
         else {
           if (gameData.canFight(this.selected, i)){
+            sounds.attack2.play()
             this.pickDice1(this.selected, i)
-          } else
+          }
+          else
             this.openPopup('alert', 'small-center','Those territories do not border!')
         }
       },
@@ -109,6 +115,7 @@
         const whiteLose = losses.whiteLose != 1 ? losses.whiteLose+" troops" : losses.whiteLose+" troop"
         const content = this.currentPlayer.name + ", you lost "+redLose+". "+this.game.players[this.attack.defendTerr.owner].name+" lost "+whiteLose+"."
         this.closePopup()
+        sounds.playAttack3()
         this.$store.dispatch("attack", losses).then((conquered) => {
           if (conquered)
             this.openPopup('callback', 'small-center', content, '', () => this.conquerTerritory(losses.attackTerr.id, redDice))
@@ -140,6 +147,7 @@
       },
       passTroops(i){
         this.closeAttack();
+        sounds.conquer.play()
         const data = {passingTerr: this.attack.attackTerr.id-1, recievingTerr: this.attack.defendTerr.id-1, troops: i}
         this.$store.commit("passTroops", data)
         this.$store.dispatch("checkForEliminatedPlayers").then((data) => {
@@ -152,6 +160,7 @@
         })
       },
       gameOver(){
+        sounds.playGameOver()
         this.openPopup("alert", "small-center", this.currentPlayer.name+", you just won the game!")
       }
     },

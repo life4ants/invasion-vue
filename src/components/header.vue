@@ -1,6 +1,18 @@
 <template>
   <nav>
     <div class="header-content">
+      <div class="musicIcon" v-if="musicOn">
+        <span @click="setMusic">
+          <i class="fa fa-music fa-lg"></i>
+        </span>
+        <input type="range" id="volumeSlider" v-model.number="volume">
+      </div>
+      <div v-else>
+        <span class="fa-stack fa-lg" @click="setMusic">
+          <i class="fa fa-music fa-stack-1x"></i>
+          <i class="fa fa-ban fa-stack-2x"></i>
+        </span>
+      </div>
       <div class="round-counter">
         <span id="tiny">Round</span>
         {{round}}
@@ -17,7 +29,6 @@
           <li :class="{disabled: !canTurnInCards}"><a class="btn-default" @click="menu('TIC')">Turn In Cards</a></li>
           <li><a class='btn-default' @click="menu('SMC')">See my Cards</a></li>
           <li><a class='btn-default' @click="menu('PI')">Players Info</a></li>
-          <li><a class='btn-default' @click="menu()">give me a card!</a></li>
         </ul>
       </div>
       <div>
@@ -37,6 +48,7 @@
 
 <script>
 import icon from './icon'
+import sounds from './sounds.js'
 
 export default {
   name: 'header',
@@ -45,7 +57,37 @@ export default {
   },
   props: [
     'phase', 'player', 'alert', 'round', 'attackLine', 'canCancel', 'menu', 'canTurnInCards'
-  ]
+  ],
+  data(){
+    return {
+      volume: 40,
+      musicOn: false
+    }
+  },
+  mounted(){
+    sounds.backgroundMusic.loop = true
+  },
+  destroyed(){
+    sounds.resetBackgroundMusic()
+  },
+  watch:{
+    volume(){
+      sounds.backgroundMusic.volume = this.volume / 100
+    }
+  },
+  methods: {
+
+    setMusic(){
+      if (this.musicOn){
+        sounds.backgroundMusic.pause()
+        this.musicOn = false
+      }
+      else {
+        sounds.backgroundMusic.play()
+        this.musicOn = true
+      }
+    }
+  }
 }
 </script>
 
@@ -103,7 +145,7 @@ export default {
   }
 
   .info li{
-    max-width: 240px;
+    max-width: 260px;
   }
 
   li a{
@@ -112,4 +154,14 @@ export default {
   .disabled {
     pointer-events: none;
   }
+  #volumeSlider {
+  width: 50px;
+  margin-top: 5px;
+}
+
+@media(max-width: 500px){
+  nav {
+    font-size: 12px;
+  }
+}
 </style>

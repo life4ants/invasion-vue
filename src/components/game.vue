@@ -26,6 +26,7 @@ import gameData from './game_data.js'
 import popup from './popup'
 import alert from './Alert'
 import footer from './footer'
+import sounds from './sounds.js'
 
 export default {
   name: 'game',
@@ -61,6 +62,8 @@ export default {
   destroyed(){
     window.onbeforeunload = undefined
     window.removeEventListener('keyup', this.keyHandler)
+    if (this.game.phase === "gameOver")
+      sounds.gameOver.pause()
   },
   methods: {
     keyHandler(e){
@@ -90,10 +93,6 @@ export default {
           break
         case 'SMC':
           this.showCards(false)
-          break
-        default:
-          this.$store.commit("drawCard", this.game.turnIndex)
-          console.error(i+" is not assigned")
       }
     },
     setAttackLine(text, erase){
@@ -149,7 +148,8 @@ export default {
         const content = this.currentPlayer.name+", do you want to pass troops before ending your turn?"
         this.openPopup("yesnocancel", "small", content, '', (i) => {
           if (i){
-            this.openPopup('alert', 'small', "Click on a passing territory, then click on a territory to pass the troops to.")
+            const content2 = "<p>Click on a passing territory, then click on a territory to pass the troops to.</p><p>Full instructions for passing: <i>coming soon!</i></p>"
+            this.openPopup('info', 'small', "Rules for Passing Troops", content2)
             this.attackLine = ''
             this.$store.commit('setPhase', 'pass1')
             $(".selected").removeClass("selected")
@@ -166,6 +166,7 @@ export default {
       if (this.currentPlayer.getsCard){
         this.$store.commit("drawCard", this.game.turnIndex)
         this.showCards(true)
+        sounds.viewCards.play()
       }
       else
         this.openPopup("callback", "small", "No card was drawn because no territories were taken!", '', () => this.endTurn())
@@ -353,6 +354,7 @@ export default {
           break
         case 'Trps':
           this.showReservesMessage()
+          sounds.playStartTurn()
           break
         case 'StTurn':
           content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."

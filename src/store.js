@@ -97,7 +97,12 @@ export default new Vuex.Store({
       }
       state.game.turnIndex = turnIndex
     },
-
+    startTurn(state, pl){
+      state.game.players[state.game.turnIndex].reserves = pl.countryPoints + pl.conPoints
+      state.game.phase = 'addTroops'
+      state.game.canTurnInCards = true
+      state.game.turnMessage = {type: 'Trps', data: pl}
+    },
     //==========Saving and Creating Games: ============
     createGame(state, playerNames){
       const data = gameData.setUpGame(playerNames)
@@ -118,12 +123,6 @@ export default new Vuex.Store({
                   }
     },
     loadGame(state, game){
-      if (game.version === 3){
-        game.cardSetValue = 4
-        game.version = 4
-        game.gameOver = false
-        console.log("upgraded version 3 game to version 4")
-      }
       state.game = game
     },
     setName(state, name){
@@ -145,10 +144,7 @@ export default new Vuex.Store({
     add2TroopsTo(state, terr){
       state.game.territories[terr].reserves += 2
     },
-    getReserves(state, pl){//getting reserves at the beginning of turn
-      state.game.players[state.game.turnIndex].reserves = pl.countryPoints + pl.conPoints
-    },
-    addReserves(state, reserves){ //adding reserves for turning in cards
+    addReserves(state, reserves){
       state.game.players[state.game.turnIndex].reserves += reserves
     }
   },
@@ -165,13 +161,10 @@ export default new Vuex.Store({
         nextPlayer = gameData.asignTempReserves(nextPlayer)
         if (nextPlayer.tempReserves > 0)
           state.game.turnMessage = {type: "InTrps", data: state.game.turnIndex}
-        else{
+        else{//time for the first player's turn
           state.game.round = 1
-          state.game.phase = 'addTroops'
           const data = gameData.getReserves(state.game)
-          commit('getReserves', data)
-          state.game.canTurnInCards = true
-          state.game.turnMessage = {type: 'Trps', data}
+          commit('startTurn', data)
         }
       }
     },
@@ -210,11 +203,8 @@ export default new Vuex.Store({
     },
     endTurn({commit, state}){
       commit('nextTurn')
-      state.game.phase = 'addTroops'
       const data = gameData.getReserves(state.game)
-      commit('getReserves', data)
-      state.game.canTurnInCards = true
-      state.game.turnMessage = {type: 'Trps', data}
+      commit('startTurn', data)
     },
     turnInCards({commit, state}, pl){
       let cards = pl.ids
