@@ -5,11 +5,12 @@
            :type="popup.type" :title="popup.title" :content="popup.content"></popup>
       <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
+      <test v-if="test"></test>
     </div>
     <h1>Welcome to Invasion!</h1>
     <p>This is a super cool game!</p>
-    <button v-on:click='skip' class="btn btn-success">Skip to game</button>
-    <button v-on:click='start' class="btn in-brown">Start New Game</button>
+    <button @click='tester' class="btn btn-success">Test</button>
+    <button @click='start' class="btn in-brown">Start New Game</button>
     <h3>Saved Games:</h3>
     <ul v-if="edit">
       <li v-for="(game, id) in games">
@@ -36,23 +37,28 @@
 <script>
 import popup from './popup'
 import alert from './Alert'
+import test from './test'
 
 export default {
   name: 'dashboard',
-  components: { popup, alert },
+  components: { popup, alert, test },
   props: [
-    'start', 'skip', 'games', "startGame"
+    'start', 'games', "startGame"
   ],
   data(){
     return {
       edit: false,
       popup: {show: false},
-      alert: {show: false}
+      alert: {show: false},
+      test: false
     }
   },
   methods: {
     editGames(){
       this.edit = true
+    },
+    tester(){
+      this.test = true
     },
     closeEdit(){
       this.edit = false
