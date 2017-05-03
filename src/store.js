@@ -56,7 +56,7 @@ export default new Vuex.Store({
       state.game.players.splice(id, 1)
       if (state.game.players.length === 1){
         state.game.gameOver = true
-        console.log("game over")
+        state.game.phase = "gameOver"
       }
       else {
         if (state.game.turnIndex > id)

@@ -6,14 +6,14 @@
     <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
       <invasion-map :openPopup="openPopup" :closePopup="closePopup" :setAttackLine="setAttackLine"
-                    :selectPasser="selectPasser" :selectPassie="selectPassie">
+                    :selectPasser="selectPasser" :selectPassie="selectPassie" :sendSelect="select">
       </invasion-map>
     </div>
     <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content" :data="popup.data"></popup>
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
-    <app-footer :phase="game.phase"></app-footer>
+    <app-footer :phase="game.phase" :terr="selected"></app-footer>
   </div>
 </template>
 
@@ -43,7 +43,8 @@ export default {
       attackLine: ' ',
       popup: {show: false},
       alert: {show: false},
-      passData: {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null}
+      passData: {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null},
+      selected: 0
     }
   },
   mounted(){
@@ -100,6 +101,12 @@ export default {
         this.attackLine = text
       else
         this.attackLine += text
+    },
+    select(i){
+      if (this.selected)
+        $('.territory'+this.selected).removeClass("selected")
+      this.selected = i
+      $('.territory'+i).addClass("selected")
     },
 
     showReservesMessage(){

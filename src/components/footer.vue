@@ -1,17 +1,24 @@
 <template>
   <footer>
-    <strong>Current Phase: </strong>
-        {{phase}}
+    <div v-if="phase === 'gameOver'">{{name}}</div>
+    <div v-else>
+      <strong>Current Phase: </strong>{{phase}}
+    </div>
   </footer>
 </template>
 
 <script>
-
+import gameData from "./game_data.js"
   export default {
     name: 'footer',
     props: [
-      'phase'
-    ]
+      'phase', 'terr'
+    ],
+    computed: {
+      name(){
+        return this.terr ? gameData.territoryInfo[this.terr].name : ''
+      }
+    }
   }
 </script>
 

@@ -4,7 +4,7 @@
   export default {
     name: 'invasionMap',
     props: [
-      'openPopup', 'closePopup', 'setAttackLine', 'selectPasser', 'selectPassie'
+      'openPopup', 'closePopup', 'setAttackLine', 'selectPasser', 'selectPassie', 'sendSelect'
     ],
     data(){
       return {
@@ -32,9 +32,7 @@
             this.selectPassie(i)
             break
           default:
-            if (this.selected)
-              $('.territory'+this.selected).removeClass("selected")
-            this.select(i)
+            this.sendSelect(i)
         }
       },
       select(territory){
@@ -146,9 +144,15 @@
         this.$store.commit("passTroops", data)
         this.$store.dispatch("checkForEliminatedPlayers").then((data) => {
           if (data[0]){
-            this.openPopup("alert", "small-center", "You eliminated "+data[1]+".")
+            if (this.game.phase === "gameOver")
+              this.openPopup("callback", "small-center", "You eliminated "+data[1]+".", '',() => this.gameOver())
+            else
+              this.openPopup("alert", "small-center", "You eliminated "+data[1]+".")
           }
         })
+      },
+      gameOver(){
+        this.openPopup("alert", "small-center", this.currentPlayer.name+", you just won the game!")
       }
     },
     computed: {
