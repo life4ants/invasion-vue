@@ -7,7 +7,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     game: {},
-    version: 4
+    version: 5
   },
 
 
@@ -104,9 +104,9 @@ export default new Vuex.Store({
       state.game.turnMessage = {type: 'Trps', data: pl}
     },
     //==========Saving and Creating Games: ============
-    createGame(state, playerNames){
-      const data = gameData.setUpGame(playerNames)
-      state.game = {version: 4, //change to any value in game needs to up version number
+    createGame(state, pl){
+      const data = gameData.setUpGame(pl.players)
+      state.game = {version: 5, //change to any value in game needs to up version number
                     id: null,
                     name: '',
                     nextCard: 0,
@@ -116,6 +116,7 @@ export default new Vuex.Store({
                     players: data.players,
                     phase: 'initialTroops',
                     round: 0,
+                    settings: pl.settings,
                     shuffledCards: gameData.shuffle(gameData.cards),
                     territories: data.territories,
                     turnIndex: data.turnIndex,
@@ -123,6 +124,11 @@ export default new Vuex.Store({
                   }
     },
     loadGame(state, game){
+      if (game.version === 4){
+        game.settings = {defenseWinsTie: false, numOfSets: 2, numOfCards: 8}
+        game.version = 5
+        console.log("version 4 game updated")
+      }
       state.game = game
     },
     setName(state, name){

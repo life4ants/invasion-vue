@@ -62,6 +62,10 @@
     flex: 1 1 225px;
   }
 
+  label{
+    height: 40px;
+  }
+
   .btn{
     height: 37px;
     width: 45px;
@@ -71,5 +75,11 @@
 
   .btn:hover{
     background-color: #999;
+  }
+
+  @media(min-width: 324px){
+    label {
+      height: 20px;
+    }
   }
 </style>

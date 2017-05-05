@@ -128,7 +128,7 @@ var territoryInfo = [
 
   setUpGame(players){
     if (players.length === 0)
-      return console.log('ERROR: there are no players')
+      return console.error('there are no players')
     let ar = [];
     for (let i=0; i<90; i++) //fill ar with values 0-89
       ar.push(i)
@@ -398,7 +398,6 @@ var territoryInfo = [
 }
 
 export default gameData
-window.cards = initializeCards()
 window.test = function(x){
   if (x != 1 && x != 2){
     console.log("please give a 1 or 2 as an argument")

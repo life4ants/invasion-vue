@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
     <div>
-      <popup :show="popup.show" :close="closePopup" :action="popup.action" :size="popup.size"
+      <popup :show="popup.show" :closePopup="closePopup" :action="popup.action" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content"></popup>
       <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
@@ -15,7 +15,7 @@
       <li>Responsive for phones</li>
       <li>Game and Player settings</li>
     </ul><br><br>
-    <button @click='start' class="btn in-brown">Start New Game</button>
+    <button @click='start' class="btn btn-primary">Start New Game</button>
     <h3>Saved Games:</h3>
     <ul v-if="edit">
       <li v-for="(game, id) in games">

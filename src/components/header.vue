@@ -1,41 +1,46 @@
 <template>
   <nav>
     <div class="header-content">
-      <div class="musicIcon" v-if="musicOn">
-        <span @click="setMusic">
-          <i class="fa fa-music fa-lg"></i>
-        </span>
-        <input type="range" id="volumeSlider" v-model.number="volume">
-      </div>
-      <div v-else>
-        <span class="fa-stack fa-lg" @click="setMusic">
-          <i class="fa fa-music fa-stack-1x"></i>
-          <i class="fa fa-ban fa-stack-2x"></i>
-        </span>
-      </div>
-      <div class="round-counter">
-        <span id="tiny">Round</span>
-        {{round}}
-      </div>
-      <div v-if="['pass1', 'pass2'].includes(phase) && canCancel">
-        <button class="btn btn-default" @click="menu('CPT')">Cancel Pass Troops</button>
-      </div>
-      <div v-else class="dropdown">
-        <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
-        <span class="caret"></span></button>
-        <ul class="dropdown-menu">
-          <li><a class='btn-default' @click="menu('EG')">Exit Game</a></li>
-          <li><a class='btn-default' @click="menu('SG')">Save Game</a></li>
-          <li :class="{disabled: !canTurnInCards}"><a class="btn-default" @click="menu('TIC')">Turn In Cards</a></li>
-          <li><a class='btn-default' @click="menu('SMC')">See my Cards</a></li>
-          <li><a class='btn-default' @click="menu('PI')">Players Info</a></li>
-        </ul>
-      </div>
-      <div>
-        <button class="btn btn-success" @click="menu('ET')">End Turn</button>
+      <div class="header-buttons">
+        <div class="musicIcon" v-if="musicOn">
+          <span @click="setMusic">
+            <i class="fa fa-music fa-lg"></i>
+          </span>
+          <input type="range" id="volumeSlider" v-model.number="volume">
+        </div>
+        <div v-else>
+          <span class="fa-stack fa-lg" @click="setMusic">
+            <i class="fa fa-music fa-stack-1x"></i>
+            <i class="fa fa-ban fa-stack-2x"></i>
+          </span>
+        </div>
+        <div class="round-counter">
+          <span id="tiny">Round</span>
+          {{round}}
+        </div>
+        <div v-if="['pass1', 'pass2'].includes(phase) && canCancel">
+          <button class="btn btn-default" @click="menu('CPT')">Cancel Passing</button>
+        </div>
+        <div v-else class="dropdown">
+          <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
+          <span class="caret"></span></button>
+          <ul class="dropdown-menu">
+            <li><a class='btn-default' @click="menu('EG')">Exit Game</a></li>
+            <li><a class='btn-default' @click="menu('SG')">Save Game</a></li>
+            <li :class="{disabled: !canTurnInCards}"><a class="btn-default" @click="menu('TIC')">Turn In Cards</a></li>
+            <li><a class='btn-default' @click="menu('SMC')">See my Cards</a></li>
+            <li><a class='btn-default' @click="menu('PI')">Players Info</a></li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn btn-success" :disabled="phase === 'initialTroops'" @click="menu('ET')">End Turn</button>
+        </div>
       </div>
       <ul class="info">
-        <li><strong>Current Player: </strong>{{player.name}}<icon :code="player.code" :size="18"></icon></li>
+        <li style="display: flex; flex-wrap: wrap;">
+          <strong>Current Player:</strong>
+          <span style="display: flex;">&#160;{{player.name}}<icon :code="player.code" :size="18" id="icon"></icon></span>
+        </li>
         <li><strong>Territories: </strong>{{player.terrCount}}</li>
         <li v-if="phase === 'initialTroops'"><strong>Total Reserves: </strong>{{player.reserves}}</li>
         <li v-else><strong>Reserves: </strong>{{player.reserves}}</li>
@@ -105,7 +110,7 @@ export default {
     font-size: 16px;
     z-index: 5;
   }
-  .header-content{
+  .header-content, .header-buttons{
     display: flex;
     justify-content: center;
     align-items: center;
@@ -118,6 +123,7 @@ export default {
     padding: 0;
     text-align: left;
     columns: 2;
+    flex-basis: 570px;
   }
 
   #tiny{
@@ -134,18 +140,12 @@ export default {
     font-weight: 500;
   }
 
-  .header-content > div{
+  .header-buttons > div{
     margin-right: 10px;
   }
 
-  .info span{
-    position: relative;
-    top: 3px;
-    margin-left: 4px;
-  }
-
-  .info li{
-    max-width: 260px;
+  #icon {
+    margin-left: 2px;
   }
 
   li a{
@@ -159,9 +159,25 @@ export default {
   margin-top: 5px;
 }
 
-@media(max-width: 500px){
+@media(max-width: 675px){
   nav {
     font-size: 12px;
+  }
+  .btn {
+    font-size: 12px;
+  }
+  .round-counter {
+    font-size: 20px;
+    height: 40px;
+    width: 40px;
+  }
+  #icon {
+    line-height: 8px;
+  }
+}
+@media(min-width: 760px) and (max-width: 864px){
+  .header-buttons {
+    width: 180px;
   }
 }
 </style>

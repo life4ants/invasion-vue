@@ -116,32 +116,32 @@
  #territory60 { left: 495px; top: 890px; }
  #territory61 { left: 568px; top: 925px; }
  #territory62 { left: 518px; top: 965px; }
- #territory63 { left: 495px; top: 1023px; }
+ #territory63 { left: 515px; top: 1028px; }
  #territory64 { left: 550px; top: 1005px; }
- #territory65 { left: 595px; top: 1010px; }
- #territory66 { left: 604px; top: 950px; }
+ #territory65 { left: 592px; top: 1011px; }
+ #territory66 { left: 608px; top: 952px; }
  #territory67 { left: 626px; top: 988px; }
  #territory68 { left: 667px; top: 1069px; }
  #territory69 { left: 630px; top: 1070px; }
- #territory70 { left: 592px; top: 1040px; }
+ #territory70 { left: 592px; top: 1044px; }
  #territory71 { left: 532px; top: 1058px; }
- #territory72 { left: 575px; top: 1075px; }
+ #territory72 { left: 568px; top: 1078px; }
  #territory73 { left: 610px; top: 1105px; }
  #territory74 { left: 670px; top: 1115px; }
  #territory75 { left: 748px; top: 1123px; }
  #territory76 { left: 785px; top: 1069px; }
  #territory77 { left: 809px; top: 1030px; }
  #territory78 { left: 825px; top: 1055px; }
- #territory79 { left: 820px; top: 1097px; }
+ #territory79 { left: 823px; top: 1103px; }
  #territory80 { left: 790px; top: 1145px; }
  #territory81 { left: 823px; top: 1168px; }
  #territory82 { left: 855px; top: 1145px; }
  #territory83 { left: 900px; top: 1180px; }
  #territory84 { left: 925px; top: 1235px; }
  #territory85 { left: 992px; top: 1265px; }
- #territory86 { left: 1045px; top: 1030px; }
+ #territory86 { left: 1030px; top: 1035px; pointer-events: auto; cursor: default;}
  #territory87 { left: 975px; top: 977px; }
  #territory88 { left: 1045px; top: 940px; }
- #territory89 { left: 1113px; top: 1002px; }
+ #territory89 { left: 1113px; top: 1002px; pointer-events: auto; cursor: default;}
  #territory90 { left: 1145px; top: 998px; }
 </style>

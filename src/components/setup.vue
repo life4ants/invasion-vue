@@ -11,7 +11,40 @@
         <option value=6>6</option>
         <option value=7>7</option>
         <option value=8>8</option>
-      </select>
+      </select><br><br>
+      <label>Use tiebreaking:</label>
+      <span class="line">
+        <label for="TBtrue">Yes</label>
+        <input type="radio" :value="true" id="TBtrue" v-model="tieBreaker">
+        <label for="TBfalse">No</label>
+        <input type="radio" :value="false" id="TBfalse" v-model="tieBreaker">
+      </span><br>
+      <a href="#" @click="showTiebreaker">{{tiebreakerShown ? "hide details" : "show details" }}</a><br>
+      <p v-if="tiebreakerShown">
+        Tie breaker will help prevent any advantage in case of a tied dice roll.<br>
+        If set to "No," the defense will always win a tie. This means if offense and defense both roll two of the same number, offense will lose 2 troops. <br>
+        If set to "Yes," the above scenario will result in each player losing one troop, and in the case of one tie, the defense will lose every other time and the offense will lose every other time.
+      </p>
+      <br v-else>
+      <label>Allow card stockpiling:</label>
+      <span class="line">
+        <label for="HChigh">High</label>
+        <input type="radio" value="high" id="HChigh" v-model="holdCards">
+        <label for="HCmid">Medium</label>
+        <input type="radio" value="mid" id="HCmid" v-model="holdCards">
+        <label for="HClow">Low</label>
+        <input type="radio" value="low" id="HClow" v-model="holdCards">
+      </span><br>
+      <a href="#" @click="showHoldCards">{{holdCardsShown ? "hide details" : "show details" }}</a><br>
+      <p v-if="holdCardsShown">
+        This decribes the maximum number of cards a player can have before they must turn in cards and how many sets of cards a player may turn in at one time.
+        <ul>
+          <li>High: 11 cards max, three sets at a time</li>
+          <li>Medium: 8 cards max, two sets at a time</li>
+          <li>Low: 5 cards max. one set at a time</li>
+        </ul>
+      </p>
+      <br v-else>
     </div>
     <div v-if="step === 2">
       <div>
@@ -62,6 +95,10 @@ export default {
       players: [{name: '', code: -1}],
       shuffledPlayers: [],
       numOfPlayers: 2,
+      tieBreaker: true,
+      holdCards: "mid",
+      tiebreakerShown: false,
+      holdCardsShown: false,
       error: ''
     }
   },
@@ -72,6 +109,29 @@ export default {
         this.error = "That icon is already taken!"
       else
         this.error = this.error === "Please enter a name" ? this.error : ''
+    },
+    showTiebreaker(){
+      this.tiebreakerShown = !this.tiebreakerShown
+    },
+    showHoldCards(){
+      this.holdCardsShown = !this.holdCardsShown
+    },
+    setSettings(){
+      let sets, cards
+      switch (this.holdCards){
+        case 'high':
+          sets = 3
+          cards = 11
+          break
+        case 'mid':
+          sets = 2
+          cards = 8
+          break
+        case 'low':
+          sets = 1
+          cards = 5
+      }
+      return {numOfSets: sets, numOfCards: cards, defenseWinTie: !this.tieBreaker}
     },
     nextStep(){
       if (this.step === 1){
@@ -84,7 +144,8 @@ export default {
         this.step++
       }
       else if (this.step === 3){
-        this.$store.commit('createGame', this.players)
+        const settings = this.setSettings()
+        this.$store.commit('createGame', {players: this.players, settings})
         this.start()
       }
       else {
@@ -159,12 +220,20 @@ export default {
     list-style: none;
     padding: 0;
   }
-  li {
+  ol li {
     display: flex;
     justify-content: center;
     align-items: center;
   }
   h4{
     margin-right: 20px;
+  }
+
+  label {
+    margin: 0px 1px 0px 8px;
+  }
+
+  .line {
+    display: inline-block;
   }
 </style>

@@ -23,9 +23,10 @@
           <div v-if="type === 'turnInCards'">
             <label>Please select three cards to turn in: </label>
           </div>
-          <div class="cardBox">
+          <div v-if="data.length > 0" class="cardBox">
             <card v-for="(card, key) in data" :value="card" :key="key" :index="key" :clickHandler="selectCard"></card>
           </div>
+          <div v-else><i>You do not have any cards!</i></div>
           <span style="float: right;"><i>{{error}}</i></span>
         </div>
         <div v-else-if="'passTroops' === type" class="modal-body">
@@ -53,11 +54,11 @@
 
         <!-- =====. footer: ====== -->
         <div v-if="'yesno' === type" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="close">No</button>
+          <button type="button" class="btn btn-default" @click="closePopup">No</button>
           <button type="button" class="btn btn-primary" @click="action">Yes</button>
         </div>
         <div v-else-if="'yesnocancel' === type" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="close">Cancel</button>
+          <button type="button" class="btn btn-default" @click="closePopup">Cancel</button>
           <button type="button" class="btn btn-success" @click="action(false)">No</button>
           <button type="button" class="btn btn-primary" @click="action(true)">Yes</button>
         </div>
@@ -70,7 +71,7 @@
           <button type="button" class="btn btn-primary" @click="action(dice)">Ok</button>
         </div>
         <div v-else-if="'confirm' === type" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="close">Cancel</button>
+          <button type="button" class="btn btn-default" @click="closePopup">Cancel</button>
           <button type="button" class="btn btn-danger" @click="action(false)">Don't Save</button>
           <button type="button" class="btn btn-primary" @click="action(true)">Save Game</button>
         </div>
@@ -82,7 +83,7 @@
           <button type="button" class="btn btn-success" @click="action(troops)">Ok</button>
         </div>
         <div v-else class="modal-footer"> <!-- used by: alert,players, info -->
-          <button type="button" class="btn btn-default" @click="close">Ok</button>
+          <button type="button" class="btn btn-default" @click="closePopup">Ok</button>
         </div>
       </div>
     </div>
@@ -104,7 +105,7 @@
 // All Types: alert, confirm, input, players, yesno, yesnocancel, info, dicepick1, dicepick2, passtroop, callback, cards, turnInCards
     props: [
       'title', 'content', 'type',
-      'players', 'show', 'close',
+      'players', 'show', 'closePopup',
       'action', 'size', 'data'
     ],
     data(){
@@ -166,21 +167,23 @@
       },
       keyHandler(event) {
         if (event.key === "Enter") {
+          console.log("enter pressed")
           if (['yesno', 'callback'].includes(this.type))
             this.action()
           else if ('yesnocancel' === this.type)
             this.action(true)
           else if (['dicepick1', 'dicepick2'].includes(this.type))
             this.action(this.dice)
-          else if (['info', 'players', 'alert'].includes(this.type))
-            this.close()
+          else if (['info', 'players', 'alert'].includes(this.type)){
+            this.closePopup()
+          }
         }
         if (event.key === "Escape"){
           if ("dicepick1" === this.type)
             this.action(0)
           else if ("dicepick2" === this.type){}
           else
-            this.close()
+            this.closePopup()
         }
       }
     },
@@ -210,7 +213,7 @@
             window.removeEventListener('keyup', this.keyHandler)
             break
           default:
-            window.addEventListener('keyup', this.keyHandler)
+            //window.addEventListener('keyup', this.keyHandler)
         }
         if (['dicepick1', 'dicepick2'].includes(this.type))
           this.dice = this.data ? 3 : 2

@@ -5,11 +5,9 @@
     </app-header>
     <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
-      <invasion-map :openPopup="openPopup" :closePopup="closePopup" :setAttackLine="setAttackLine"
-                    :selectPasser="selectPasser" :selectPassie="selectPassie" :sendSelect="select">
-      </invasion-map>
+      <invasion-map :clicker="clicker"></invasion-map>
     </div>
-    <popup :show="popup.show" :close="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
+    <popup :show="popup.show" :closePopup="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
            :type="popup.type" :title="popup.title" :content="popup.content" :data="popup.data"></popup>
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
@@ -44,6 +42,7 @@ export default {
       attackLine: ' ',
       popup: {show: false},
       alert: {show: false},
+      attack: {},
       passData: {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null},
       selected: 0
     }
@@ -65,49 +64,48 @@ export default {
     if (this.game.phase === "gameOver")
       sounds.gameOver.pause()
   },
+  watch: {
+    turnMessage(){
+      switch (this.game.turnMessage.type){
+        case 'InTrps':
+          const troops = this.currentPlayer.tempReserves
+          let content = this.currentPlayer.name + ", now it is your turn to distribute " +(troops > 1 ? troops+" troops.": troops+" troop.")
+          this.openPopup('alert', 'small-center', content)
+          break
+        case 'Trps':
+          this.showReservesMessage()
+          sounds.playStartTurn()
+          break
+        case 'StTurn':
+          content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
+          this.openPopup('info', 'small-center', 'Distribution Complete', content)
+          break
+        case 'Cards':
+          this.showCardsMessage()
+          break
+        default:
+      }
+    }
+  },
+  computed: {
+    game(){
+      return this.$store.getters.game()
+    },
+    currentPlayer(){
+      return this.game.players[this.game.turnIndex]
+    },
+    turnMessage(){
+      return this.$store.getters.turnMessage()
+    }
+  },
   methods: {
     keyHandler(e){
-      if (e.key === "x" && !this.popup.show){
-        console.log("you pushed the button!")
+      if (e.key === "r" && !this.popup.show){
+        console.log(e.key)
+        // this.repeatAttack()
       }
     },
-    buttonRouter(i){
-      switch(i){
-        case 'ET':
-          this.endTurnButton()
-          break
-        case 'EG':
-          this.confirmEndGame()
-          break
-        case 'SG':
-          this.saveGameButton()
-          break
-        case 'PI':
-          this.showAllPlayers()
-          break
-        case 'CPT':
-          this.cancelPassTroops()
-          break
-        case 'TIC':
-          this.turnInCards()
-          break
-        case 'SMC':
-          this.showCards(false)
-      }
-    },
-    setAttackLine(text, erase){
-      if (erase)
-        this.attackLine = text
-      else
-        this.attackLine += text
-    },
-    select(i){
-      if (this.selected)
-        $('.territory'+this.selected).removeClass("selected")
-      this.selected = i
-      $('.territory'+i).addClass("selected")
-    },
-
+    // ========= Watch action responders: =========
     showReservesMessage(){
       const data = this.game.turnMessage.data
       let content = "<p><strong>"+this.currentPlayer.name +", it is your turn.</strong> You have "+this.currentPlayer.terrCount+
@@ -138,7 +136,208 @@ export default {
       this.openPopup('info', 'small', "Cards were turned in", content)
     },
 
-    // ========== End Turn logic: ===============
+    //======== Routers/setters: =======
+    buttonRouter(i){
+      switch(i){
+        case 'ET':
+          this.endTurnButton()
+          break
+        case 'EG':
+          this.confirmEndGame()
+          break
+        case 'SG':
+          this.saveGameButton()
+          break
+        case 'PI':
+          this.showAllPlayers()
+          break
+        case 'CPT':
+          this.cancelPassTroops()
+          break
+        case 'TIC':
+          this.turnInCards()
+          break
+        case 'SMC':
+          this.showCards(false)
+      }
+    },
+    clicker(i){
+      switch(this.game.phase){
+        case 'initialTroops':
+        case 'addTroops':
+          this.addTroops(i)
+          break
+        case 'attack1':
+          this.selectAttacker(i)
+          break
+        case 'attack2':
+          this.selectAttacked(i)
+          break
+        case 'pass1':
+          this.selectPasser(i)
+          break
+        case 'pass2':
+          this.selectPassie(i)
+          break
+        default:
+          if (this.selected)
+             $('.territory'+this.selected).removeClass("selected")
+          this.select(i)
+      }
+    },
+    setAttackLine(text, erase){
+      if (erase)
+        this.attackLine = text
+      else
+        this.attackLine += text
+    },
+    select(territory){
+      $('.territory'+territory).addClass("selected")
+      this.selected = territory
+    },
+    addTroops(i){
+      if (this.game.territories[i-1].owner === this.game.turnIndex){
+        this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
+        sounds.playTroops()
+      }
+      else
+        this.openPopup('alert', 'small-center','That territory does not belong to you!')
+    },
+
+    //========== Attacking/Conquering: ============
+    selectAttacker(i){
+      let terr = this.game.territories[i-1]
+      if (terr.owner === this.game.turnIndex){
+        if (terr.reserves > 1){
+          this.select(i)
+          this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
+          this.$store.commit('setPhase', 'attack2')
+          sounds.attack1.play()
+        }
+        else
+          this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
+      }
+      else
+        this.openPopup('alert', 'small-center','That territory does not belong to you!')
+    },
+    selectAttacked(i){
+      if (this.game.territories[i-1].owner === this.game.turnIndex){
+        if (this.game.territories[i-1].reserves > 1){
+          $('.territory'+this.selected).removeClass("selected")
+          this.select(i)
+          this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
+        }
+        else
+          this.openPopup('alert', 'small-center', 'That territory does not have enough troops to attack!')
+      }
+      else {
+        if (gameData.canFight(this.selected, i)){
+          sounds.attack2.play()
+          $('.territory'+i).addClass("selected")
+          this.setAttackLine(gameData.territoryInfo[i].name, false)
+          const attackTerr = this.game.territories[this.selected-1]
+          const defendTerr = this.game.territories[i-1]
+          this.attack = {attackTerr, defendTerr}
+          this.pickDice1()
+        }
+        else
+          this.openPopup('alert', 'small-center','Those territories do not border!')
+      }
+    },
+    pickDice1(){
+      if (this.attack.attackTerr.reserves > 2){
+        const threedice = this.attack.attackTerr.reserves > 3 ? true : false
+        const title = this.currentPlayer.name + ", please pick number of dice to roll:"
+        this.openPopup("dicepick1", 'small-center', title, '', (i) => this.pickDice2(i), threedice)
+      }
+      else
+        this.pickDice2(1)
+    },
+    pickDice2(redDice){
+      console.log(this)
+      if (redDice === 0)
+        this.cancelAttack()
+      else {
+        if (this.attack.defendTerr.reserves > 1){
+          if (!sounds.attack2.paused)
+            sounds.attack2.currentTime = 0
+          else
+            sounds.attack2.play()
+          const title = this.game.players[this.attack.defendTerr.owner].name + ", please pick number of dice to roll:"
+          this.openPopup("dicepick2", 'small-center', title, '', (i) => this.attackModal(redDice, i), false)
+        }
+        else
+          this.attackModal(redDice, 1)
+      }
+    },
+    attackModal(redDice, whiteDice){
+      let losses = gameData.runAttack(redDice, whiteDice, this.game.settings.defenseWinsTie)
+      Object.assign(losses, losses, this.attack)
+      const redLose = losses.redLose != 1 ? losses.redLose+" troops" : losses.redLose+" troop"
+      const whiteLose = losses.whiteLose != 1 ? losses.whiteLose+" troops" : losses.whiteLose+" troop"
+      const content = this.currentPlayer.name + ", you lost "+redLose+". "+this.game.players[this.attack.defendTerr.owner].name+" lost "+whiteLose+"."
+      this.closePopup()
+      sounds.playAttack3()
+      this.$store.dispatch("attack", losses).then((conquered) => {
+        if (conquered)
+          this.openPopup('callback', 'small-center', content, '', () => this.conquerTerritory(losses.attackTerr.id, redDice))
+        else
+          this.openPopup('callback', 'small-center', content, '', () => this.closeAttack())
+      })
+    },
+    cancelAttack(){
+      this.closePopup()
+      this.setAttackLine("", true)
+      this.$store.commit('setPhase', 'attack1')
+      $(".selected").removeClass('selected')
+      this.attack = {}
+    },
+    closeAttack(){
+      this.closePopup()
+      this.$store.commit('setPhase', 'attack1')
+      $(".selected").removeClass('selected')
+    },
+    conquerTerritory(id, dice){
+      const reserves = this.game.territories[id-1].reserves
+      if (dice === reserves-1){
+        this.moveTroops(reserves-1)
+      }
+      else {
+        this.openPopup("passTroops", "small-center", "Territory Conquered!", '',
+        (i) => this.moveTroops(i), {min: dice, max: reserves-1})
+      }
+    },
+    moveTroops(i){
+      this.closeAttack();
+      sounds.conquer.play()
+      const data = {passingTerr: this.attack.attackTerr.id-1, recievingTerr: this.attack.defendTerr.id-1, troops: i}
+      this.$store.commit("passTroops", data)
+      this.$store.dispatch("checkForEliminatedPlayers").then((data) => {
+        if (data[0]){
+          if (this.game.phase === "gameOver")
+            this.openPopup("callback", "small-center", "You eliminated "+data[1]+".", '',() => this.gameOver())
+          else
+            this.openPopup("alert", "small-center", "You eliminated "+data[1]+".")
+        }
+      })
+    },
+    gameOver(){
+      sounds.playGameOver()
+      this.openPopup("alert", "small-center", this.currentPlayer.name+", you just won the game!")
+    },
+    repeatAttack(){
+      console.log("repeatAttack")
+      if (Object.keys(this.attack).length === 0)
+        return
+      else if (this.attack.attackTerr.reserves > 1 && this.attack.attackTerr.owner != this.attack.defendTerr.owner){
+        sounds.attack2.play()
+        $('.territory'+this.attack.attackTerr.id).addClass("selected")
+        $('.territory'+this.attack.defendTerr.id).addClass("selected")
+        this.pickDice1()
+      }
+    },
+
+    // ========== End Turn/ Turn in Cards: ===============
     endTurnButton(){
       if (['pass1', 'pass2'].includes(this.game.phase)){
         this.resetPassData()
@@ -269,7 +468,7 @@ export default {
       if (this.checkForChanges())
         this.openPopup('confirm', 'small', 'Close Game', "Do you want to save your game before closing?", (x) => this.endGame(x))
       else
-        this.openPopup('yesno', 'small', 'Are you sure you want to close the game?', '', (i) => this.close())
+        this.openPopup('yesno', 'small', 'Are you sure you want to close the game?', '', () => this.close())
     },
     endGame(save){
       if (save){
@@ -314,7 +513,6 @@ export default {
       let games = JSON.parse(localStorage.invasionGames)
       if (id === undefined){
         let id = games.length > 0 ? games[games.length-1].id+1 : 0
-        console.log(id)
         this.$store.commit('setId', id)
         games.push(this.game)
       }
@@ -343,40 +541,6 @@ export default {
     closeAlert(){
       this.alert.show = false
     }
-  },
-  watch: {
-    turnMessage(){
-      switch (this.game.turnMessage.type){
-        case 'InTrps':
-          const troops = this.currentPlayer.tempReserves
-          let content = this.currentPlayer.name + ", now it is your turn to distribute " +(troops > 1 ? troops+" troops.": troops+" troop.")
-          this.openPopup('alert', 'small-center', content)
-          break
-        case 'Trps':
-          this.showReservesMessage()
-          sounds.playStartTurn()
-          break
-        case 'StTurn':
-          content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
-          this.openPopup('info', 'small-center', 'Distribution Complete', content)
-          break
-        case 'Cards':
-          this.showCardsMessage()
-          break
-        default:
-      }
-    }
-  },
-  computed: {
-    game(){
-      return this.$store.getters.game()
-    },
-    currentPlayer(){
-      return this.game.players[this.game.turnIndex]
-    },
-    turnMessage(){
-      return this.$store.getters.turnMessage()
-    }
   }
 }
 </script>
@@ -384,11 +548,26 @@ export default {
 <style scoped>
   .game{
     position: absolute;
-    padding-top: 60px;
+    padding-top: 88px;
   }
   .wrapper{
     background-color: #222;
     width: 1200px;
     height: 1320px;
   }
+@media(min-width: 675px){
+  .game{
+    padding-top: 106px;
+  }
+}
+@media(min-width: 760px){
+  .game{
+    padding-top: 94px;
+  }
+}
+@media(min-width: 865px){
+  .game{
+    padding-top: 60px;
+  }
+}
 </style>
