@@ -54,36 +54,36 @@
 
         <!-- =====. footer: ====== -->
         <div v-if="'yesno' === type" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="closePopup">No</button>
-          <button type="button" class="btn btn-primary" @click="action">Yes</button>
+          <button type="button" class="btn btn-default" id="esc" @click="closePopup">No</button>
+          <button type="button" class="btn btn-primary" id="etr" @click="action">Yes</button>
         </div>
         <div v-else-if="'yesnocancel' === type" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="closePopup">Cancel</button>
+          <button type="button" class="btn btn-default" id="esc" @click="closePopup">Cancel</button>
           <button type="button" class="btn btn-success" @click="action(false)">No</button>
-          <button type="button" class="btn btn-primary" @click="action(true)">Yes</button>
+          <button type="button" class="btn btn-primary" id="etr" @click="action(true)">Yes</button>
         </div>
         <div v-else-if="['input', 'turnInCards'].includes(type)" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="cancel">Cancel</button>
-          <button type="button" class="btn btn-primary" @click="checkValue">Ok</button>
+          <button type="button" class="btn btn-default" id="esc" @click="cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="etr" @click="checkValue">Ok</button>
         </div>
         <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-footer">
-          <button v-if="'dicepick1' === type" type="button" class="btn btn-default" @click="action(0)">Cancel</button>
-          <button type="button" class="btn btn-primary" @click="action(dice)">Ok</button>
+          <button v-if="'dicepick1' === type" type="button" class="btn btn-default" id="esc" @click="action(0)">Cancel</button>
+          <button type="button" class="btn btn-primary" id="etr" @click="action(dice)">Ok</button>
         </div>
         <div v-else-if="'confirm' === type" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="closePopup">Cancel</button>
+          <button type="button" class="btn btn-default" id="esc" @click="closePopup">Cancel</button>
           <button type="button" class="btn btn-danger" @click="action(false)">Don't Save</button>
-          <button type="button" class="btn btn-primary" @click="action(true)">Save Game</button>
+          <button type="button" class="btn btn-primary" id="etr" @click="action(true)">Save Game</button>
         </div>
         <div v-else-if="['callback', 'cards'].includes(type)" class="modal-footer">
-          <button type="button" class="btn btn-default" @click="action">Ok</button>
+          <button type="button" class="btn btn-default" id="etr" @click="action">Ok</button>
         </div>
         <div v-else-if="'passTroops' === type" class="modal-footer">
-          <button v-if="title === 'Pass Troops'" type="button" class="btn btn-default" @click="action(0)">Cancel</button>
-          <button type="button" class="btn btn-success" @click="action(troops)">Ok</button>
+          <button v-if="title === 'Pass Troops'" type="button" class="btn btn-default" id="esc" @click="action(0)">Cancel</button>
+          <button type="button" class="btn btn-success" id="etr" @click="action(troops)">Ok</button>
         </div>
         <div v-else class="modal-footer"> <!-- used by: alert,players, info -->
-          <button type="button" class="btn btn-default" @click="closePopup">Ok</button>
+          <button type="button" class="btn btn-default" id="etr" @click="closePopup">Ok</button>
         </div>
       </div>
     </div>
@@ -106,7 +106,7 @@
     props: [
       'title', 'content', 'type',
       'players', 'show', 'closePopup',
-      'action', 'size', 'data'
+      'action', 'size', 'data', 'repeatAttack'
     ],
     data(){
       return {
@@ -116,6 +116,12 @@
         troops: null,
         selectedCards: []
       }
+    },
+    mounted(){
+      window.addEventListener('keyup', this.keyHandler)
+    },
+    destroyed(){
+      window.removeEventListener('keyup', this.keyHandler)
     },
     methods: {
       checkValue(){
@@ -166,24 +172,19 @@
         }
       },
       keyHandler(event) {
-        if (event.key === "Enter") {
-          console.log("enter pressed")
-          if (['yesno', 'callback'].includes(this.type))
-            this.action()
-          else if ('yesnocancel' === this.type)
-            this.action(true)
-          else if (['dicepick1', 'dicepick2'].includes(this.type))
-            this.action(this.dice)
-          else if (['info', 'players', 'alert'].includes(this.type)){
-            this.closePopup()
+        console.log(event.key+" was pressed")
+        if (this.show){
+          if (event.key === "Enter") {
+            $('#etr').click()
+          }
+          else if (event.key === "Escape"){
+            $('#esc').click()
           }
         }
-        if (event.key === "Escape"){
-          if ("dicepick1" === this.type)
-            this.action(0)
-          else if ("dicepick2" === this.type){}
-          else
-            this.closePopup()
+        else {
+          console.log("no popup")
+          if (event.key === "r")
+            this.repeatAttack()
         }
       }
     },
@@ -202,23 +203,14 @@
     },
     watch: {
       type(){
-        switch(this.type){
-          case "input":
-            setTimeout(() => $("#nameInput").trigger("focus"), 0)
-            break
-          case "passTroops":
-            setTimeout(() => $("#troops").trigger("focus"), 0)
-            break
-          case undefined:
-            window.removeEventListener('keyup', this.keyHandler)
-            break
-          default:
-            //window.addEventListener('keyup', this.keyHandler)
-        }
-        if (['dicepick1', 'dicepick2'].includes(this.type))
-          this.dice = this.data ? 3 : 2
-        else if ('passTroops' === this.type)
+        if (this.type === "input")
+          setTimeout(() => $("#nameInput").trigger("focus"), 0)
+        else if (this.type === 'passTroops'){
           this.troops = this.data.max
+          setTimeout(() => $("#troops").trigger("focus"), 0)
+        }
+        else if (['dicepick1', 'dicepick2'].includes(this.type))
+          this.dice = this.data ? 3 : 2
       }
     }
   }

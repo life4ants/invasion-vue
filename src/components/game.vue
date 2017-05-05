@@ -8,7 +8,7 @@
       <invasion-map :clicker="clicker"></invasion-map>
     </div>
     <popup :show="popup.show" :closePopup="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
-           :type="popup.type" :title="popup.title" :content="popup.content" :data="popup.data"></popup>
+           :type="popup.type" :title="popup.title" :content="popup.content" :data="popup.data" :repeatAttack="repeatAttack"></popup>
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase" :terr="selected"></app-footer>
@@ -49,7 +49,6 @@ export default {
   },
   mounted(){
     window.onbeforeunload = () => this.checkForChanges() ? '' : undefined
-    window.addEventListener('keyup', this.keyHandler)
     if (this.game.phase === "initialTroops"){
       const troops = this.currentPlayer.tempReserves
       const content = "<p class='indent'>The territories have been randomly asigned. Each player will distribute troops in turn.</p><p class='indent'><strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
@@ -60,7 +59,6 @@ export default {
   },
   destroyed(){
     window.onbeforeunload = undefined
-    window.removeEventListener('keyup', this.keyHandler)
     if (this.game.phase === "gameOver")
       sounds.gameOver.pause()
   },
@@ -99,12 +97,6 @@ export default {
     }
   },
   methods: {
-    keyHandler(e){
-      if (e.key === "r" && !this.popup.show){
-        console.log(e.key)
-        // this.repeatAttack()
-      }
-    },
     // ========= Watch action responders: =========
     showReservesMessage(){
       const data = this.game.turnMessage.data
@@ -254,7 +246,6 @@ export default {
         this.pickDice2(1)
     },
     pickDice2(redDice){
-      console.log(this)
       if (redDice === 0)
         this.cancelAttack()
       else {
@@ -326,10 +317,11 @@ export default {
       this.openPopup("alert", "small-center", this.currentPlayer.name+", you just won the game!")
     },
     repeatAttack(){
-      console.log("repeatAttack")
       if (Object.keys(this.attack).length === 0)
         return
-      else if (this.attack.attackTerr.reserves > 1 && this.attack.attackTerr.owner != this.attack.defendTerr.owner){
+      else if (this.attack.attackTerr.reserves > 1 &&
+        this.attack.attackTerr.owner === this.game.turnIndex &&
+        this.attack.defendTerr.owner != this.game.turnIndex){
         sounds.attack2.play()
         $('.territory'+this.attack.attackTerr.id).addClass("selected")
         $('.territory'+this.attack.defendTerr.id).addClass("selected")
@@ -345,18 +337,20 @@ export default {
       }
       else {
         const content = this.currentPlayer.name+", do you want to pass troops before ending your turn?"
-        this.openPopup("yesnocancel", "small", content, '', (i) => {
-          if (i){
-            const content2 = "<p>Click on a passing territory, then click on a territory to pass the troops to.</p><p>Full instructions for passing: <i>coming soon!</i></p>"
-            this.openPopup('info', 'small', "Rules for Passing Troops", content2)
-            this.attackLine = ''
-            this.$store.commit('setPhase', 'pass1')
-            $(".selected").removeClass("selected")
-          }
-          else {
-            this.drawCard()// which will call endTurn()
-          } })
+        this.openPopup("yesnocancel", "small", content, '', (i) => this.confirmPassing(i))
       }
+    },
+    confirmPassing(pass){
+      this.closePopup()
+      if (pass){
+        const content2 = "<p>Click on a passing territory, then click on a territory to pass the troops to.</p><p>Full instructions for passing: <i>coming soon!</i></p>"
+        this.openPopup('info', 'small', "Rules for Passing Troops", content2)
+        this.attackLine = ''
+        this.$store.commit('setPhase', 'pass1')
+        $(".selected").removeClass("selected")
+      }
+      else
+        this.drawCard()// which will call endTurn()
     },
     endTurn(){
       this.$store.dispatch('endTurn')
@@ -394,7 +388,8 @@ export default {
     //============== Passing Troops: =============
     cancelPassTroops(){
       this.resetPassData()
-      this.$store.commit("setPhase", "attack1")
+      const phase = this.currentPlayer.reserves > 0 ? "addTroops" : "attack1"
+      this.$store.commit("setPhase", phase)
     },
     cancelThisPass(){
       $('.selected').removeClass('selected')
@@ -528,9 +523,11 @@ export default {
     // ======= Popups: ===========
     openPopup(type, size, title, content, action, data){
       this.popup = {show: true, type, size, title, content, action, data}
+      console.log('popup opened')
     },
     closePopup(){
       this.popup = {show: false}
+      console.log("popup closed")
     },
     showAllPlayers(){
       this.openPopup('players', 'small', 'Players Info')
