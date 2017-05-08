@@ -21,6 +21,7 @@
           </ul>
           <span>A set of cards is worth {{data.cardValue}} troops.</span>
         </div>
+
         <div v-else-if="['cards', 'turnInCards'].includes(type)" class="modal-body">
           <div v-if="type === 'turnInCards'">
             <label>Please select three cards to turn in: </label>
@@ -31,14 +32,15 @@
           <div v-else><i>You do not have any cards!</i></div>
           <span class="right"><i>{{error}}</i></span>
         </div>
+
         <div v-else-if="'passTroops' === type" class="modal-body">
           <label>Enter number of Troops to pass:</label>
-          <input id="troops" type="number"  @keyup.enter="checkTroops"
-                :min="data.min" :max="data.max" v-model.number="troops">
+          <input id="troops" type="number" :min="data.min" :max="data.max" v-model.number="troops">
           <label>This will leave behind:</label>
           <span>{{behind}}</span><br>
           <i class="right">{{error}}</i>
         </div>
+
         <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-body center" >
           <input type="radio" id="one" :value="1" v-model="dice">
           <label for="one">One</label>
@@ -47,13 +49,27 @@
           <input v-if="data" type="radio" id="three" :value="3" v-model="dice">
           <label v-if="data" for="three">Three</label>
         </div>
-        <div v-else-if="['alert', 'yesno', 'yesnocancel'].includes(type)"></div>
+
+        <div v-else-if="'settings' === type" class="modal-body center">
+          <label>Your name is: </label>
+          <input type="text" v-model="name" maxlength="22" id="nameInput">
+          <br><br>
+          <input type="checkbox" id="autoroll" v-model="autoroll">
+          <label for="autoroll">Auto-roll dice when you are being attacked:</label><br>
+          <input type="radio" id="two" :value="2" v-model="dice" :disabled="!autoroll">
+          <label for="two" :class="{'disabled': !autoroll}">Two</label>
+          <input type="radio" id="one" :value="1" v-model="dice" :disabled="!autoroll">
+          <label for="one" :class="{'disabled': !autoroll}">One</label>
+        </div>
+
         <div v-else-if="type === 'input'" class="modal-body">
           <label>{{content}}</label>
-          <input type="text" v-model="name" maxlength="22" id="nameInput" @keyup.enter="checkName" @keyup.esc="cancel">
+          <input type="text" v-model="name" maxlength="22" id="nameInput">
           <i>{{error}}</i>
         </div>
+
         <div v-else-if="content" class="modal-body" v-html="content"></div> <!-- used by: confirm, info, callback -->
+        <div v-else ></div> <!-- used by: alert, yesno, yesnocancel, callback -->
 
         <!-- =====. footer: ====== -->
         <div v-if="'yesno' === type" class="modal-footer">
@@ -65,7 +81,7 @@
           <button type="button" class="btn btn-success" @click="action(false)">No</button>
           <button type="button" class="btn btn-primary" id="etr" @click="action(true)">Yes</button>
         </div>
-        <div v-else-if="['input', 'turnInCards'].includes(type)" class="modal-footer">
+        <div v-else-if="['input', 'turnInCards', 'settings'].includes(type)" class="modal-footer">
           <button type="button" class="btn btn-default" id="esc" @click="cancel">Cancel</button>
           <button type="button" class="btn btn-primary" id="etr" @click="checkValue">Ok</button>
         </div>
@@ -105,7 +121,8 @@
     components: {
       icon, card
     },
-// All Types: alert, confirm, input, players, yesno, yesnocancel, info, dicepick1, dicepick2, passtroop, callback, cards, turnInCards
+// All Types: alert, confirm, input, players, yesno, yesnocancel, info,
+// dicepick1, dicepick2, passtroop, callback, cards, turnInCards, settings
     props: [
       'title', 'content', 'type', 'show', 'closePopup',
       'action', 'size', 'data', 'repeatAttack'
@@ -116,7 +133,8 @@
         error: '',
         dice: null,
         troops: null,
-        selectedCards: []
+        selectedCards: [],
+        autoroll: false
       }
     },
     mounted(){
@@ -131,6 +149,8 @@
           this.checkName()
         else if (this.type === 'turnInCards')
           this.checkCards()
+        else if (this.type === 'settings')
+          this.setSettings()
       },
       checkCards(){
         if (this.selectedCards.length != 3)
@@ -165,6 +185,14 @@
           this.action(this.troops)
         }
       },
+      setSettings(){
+        if (this.name != this.data.currentPlayer.name)
+          this.$store.commit("changeName", {id: this.data.id, name: this.name})
+        const autoroll = this.autoroll ? this.dice : false
+        this.$store.commit("setAutoroll", {id: this.data.id, value: autoroll})
+        this.name = ''
+        this.closePopup()
+      },
       cancel(){
         if (this.type === 'input'){
           this.error = ''
@@ -181,7 +209,10 @@
             this.action()
           }
         }
-
+        else if (this.type === 'settings'){
+          this.name = ''
+          this.closePopup()
+        }
       },
       selectCard(i){
         if ($("#card"+i).hasClass('selected')){
@@ -231,6 +262,11 @@
         }
         else if (['dicepick1', 'dicepick2'].includes(this.type))
           this.dice = this.data ? 3 : 2
+        else if ('settings' === this.type){
+          this.dice = this.data.currentPlayer.settings.autoroll ? this.data.currentPlayer.settings.autoroll : 2
+          this.autoroll = this.data.currentPlayer.settings.autoroll ? true : false
+          this.name = this.data.currentPlayer.name
+        }
       }
     }
   }
@@ -263,6 +299,9 @@
   }
   label {
     margin-right: 8px;
+  }
+  .disabled {
+    color: #999;
   }
   .center {
     text-align: center;

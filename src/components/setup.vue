@@ -1,6 +1,7 @@
 <template>
   <div class="dashboard">
     <h3>Start New Game</h3>
+    <!-- step one: -->
     <div v-if="step === 1">
       <label>Select Number of Players:</label>
       <select v-model='numOfPlayers'>
@@ -41,16 +42,17 @@
         <ul>
           <li>High: 11 cards max, three sets at a time</li>
           <li>Medium: 8 cards max, two sets at a time</li>
-          <li>Low: 5 cards max. one set at a time</li>
+          <li>Low: 5 cards max, one set at a time</li>
         </ul>
       </p>
       <br v-else>
     </div>
+    <!-- Step two:  -->
     <div v-if="step === 2">
       <div>
         <h4>Player {{currentPlayer+1}}</h4>
         <label>Name:</label>
-        <input v-model='players[currentPlayer].name'><br>
+        <input v-model='players[currentPlayer].name' maxlength="22"><br>
         <i>{{error}}</i>
       </div>
       <iconbox :code="filteredCode" :changeIcon='changeIcon'></iconbox>
@@ -138,7 +140,7 @@ export default {
         this.players = []
         for (let i=0; i<this.numOfPlayers; i++){
           this.players[i] = {name: '', code: -1, terrCount: 0,
-          cards: [], getsCard: false, mustTurnInCards: false} //change here needs to up version number
+          cards: [], getsCard: false, mustTurnInCards: false, settings: {autoroll: false}} //change here needs to up version number
         }
         this.code = -1
         this.step++
@@ -178,6 +180,7 @@ export default {
         this.step--
     },
     verify(){
+      this.players[this.currentPlayer].name = this.players[this.currentPlayer].name.replace(/^\s+|\s+$/g, '')
       if (this.players[this.currentPlayer].name.length < 1)
         return "Please enter a name"
       if (this.code < 0)

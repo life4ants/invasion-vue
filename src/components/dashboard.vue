@@ -77,10 +77,10 @@ export default {
     },
     confirmDelete(id){
       const content = "Are you sure you want to delete "+this.games[id].name + " ?"
-      this.openPopup('yesno', 'small', content, '', () => this.deleteGame(id))
+      this.openPopup('yesno', 'small-center', content, '', () => this.deleteGame(id))
     },
     renameGame(id){
-      this.openPopup('input', '', 'Rename Game', "Please enter a new name for the game "+this.games[id].name+":", (x, name) => {
+      this.openPopup('input', 'small-center', 'Rename \"'+this.games[id].name+'\"', "Please enter a new name:", (x, name) => {
             if (x){
               this.games[id].name = name
               localStorage.setItem('invasionGames', JSON.stringify(this.games))

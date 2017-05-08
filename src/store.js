@@ -7,7 +7,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     game: {},
-    version: 6
+    version: 7
   },
 
 
@@ -108,10 +108,17 @@ export default new Vuex.Store({
       state.game.setsTurnedIn = 0
       state.game.turnMessage = {type: 'Trps', data: pl}
     },
+    changeName(state, pl){
+      state.game.players[pl.id].name = pl.name
+    },
+    setAutoroll(state, pl){
+      state.game.players[pl.id].settings.autoroll = pl.value
+    },
+
     //==========Saving and Creating Games: ============
     createGame(state, pl){
       const data = gameData.setUpGame(pl.players)
-      state.game = {version: 6, //change to any value in game needs to up version number
+      state.game = {version: 7, //change to any value in game needs to up version number
                     id: null,
                     name: '',
                     nextCard: 0,
@@ -132,14 +139,20 @@ export default new Vuex.Store({
     loadGame(state, game){
       if (game.version === 4){
         game.settings = {defenseWinsTie: false, numOfSets: 2, numOfCards: 8}
-        game.setsTurnedIn = 0
-        game.version = 6
-        console.log("version 4 game updated")
+        game.version = 5
+        console.log("upgrading to version 5")
       }
-      else if (game.version === 5){
+      if (game.version === 5){
         game.setsTurnedIn = 0
         game.version = 6
-        console.log("version 5 game updated")
+        console.log("upgrading to version 6")
+      }
+      if (game.version === 6){
+        for (let i=0; i<game.players.length; i++){
+          game.players[i].settings = {autoroll: false}
+        }
+        game.version = 7
+        console.log("upgrading to version 7")
       }
       state.game = game
     },

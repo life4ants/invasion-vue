@@ -29,6 +29,7 @@
             <li><a class='btn-default' @click="menu('SG')">Save Game</a></li>
             <li :class="{disabled: !canTurnInCards}"><a class="btn-default" @click="menu('TIC')">Turn In Cards</a></li>
             <li><a class='btn-default' @click="menu('SMC')">See my Cards</a></li>
+            <li><a class='btn-default' @click="menu('Set')">My Settings</a></li>
             <li><a class='btn-default' @click="menu('PI')">Players Info</a></li>
             <li><a class='btn-default' @click="menu()">give me a card</a></li>
           </ul>
@@ -44,9 +45,9 @@
           <span style="display: flex;">&#160;{{player.name}}<icon :code="player.code" :size="18" id="icon"></icon></span>
         </li>
         <li><strong>Territories: </strong>{{player.terrCount}}</li>
-        <li v-if="phase === 'initialTroops'"><strong>Total Reserves: </strong>{{player.reserves}}</li>
-        <li v-else><strong>Reserves: </strong>{{player.reserves}}</li>
-        <li v-if="phase === 'initialTroops'"><strong>Reserves: </strong>{{player.tempReserves}}</li>
+        <li v-if="phase === 'initialTroops'"><strong>Total Troops: </strong>{{player.reserves}}</li>
+        <li v-else><strong>Troops: </strong>{{player.reserves}}</li>
+        <li v-if="phase === 'initialTroops'"><strong>Troops: </strong>{{player.tempReserves}}</li>
         <li v-else><strong>Attack: </strong>{{attackLine}}</li>
       </ul>
     </div>
@@ -155,7 +156,9 @@ export default {
   }
 
   #icon {
-    margin-left: 2px;
+    margin-left: 6px;
+    line-height: 9px;
+    padding: 2px;
   }
 
   li a{
@@ -185,7 +188,7 @@ export default {
     width: 40px;
   }
   #icon {
-    line-height: 8px;
+    padding: 0;
   }
 }
 @media(min-width: 760px) and (max-width: 864px){

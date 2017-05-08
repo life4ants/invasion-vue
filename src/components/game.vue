@@ -51,7 +51,7 @@ export default {
     window.onbeforeunload = () => this.checkForChanges() ? '' : undefined
     if (this.game.phase === "initialTroops"){
       const troops = this.currentPlayer.tempReserves
-      const content = "<p class='indent'>The territories have been randomly asigned. Each player will distribute troops in turn.</p><p class='indent'><strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
+      const content = "<p class='indent'>The territories have been randomly asigned. Each player has been give a number of troops to distribute before the game starts. Pick your position and defend it well!</p><p class='indent'>Each player will distribute troops in turn. <strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
       this.openPopup('info', 'small', "Distribute Initial Troops", content)
     }
     else
@@ -154,6 +154,9 @@ export default {
           break
         case 'SMC':
           this.showCards(false)
+          break
+        case 'Set':
+          this.showPlayerSettings()
           break
         default:
           this.$store.commit("drawCard", this.game.turnIndex)
@@ -556,6 +559,12 @@ export default {
     },
     closeAlert(){
       this.alert.show = false
+    },
+
+    //====== Settings: ===========
+    showPlayerSettings(){
+      this.openPopup('settings', 'small', this.currentPlayer.name+"\'s settings", '', '',
+        {currentPlayer: this.currentPlayer, id: this.game.turnIndex})
     }
   }
 }
