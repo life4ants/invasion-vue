@@ -19,7 +19,7 @@
           {{round}}
         </div>
         <div v-if="['pass1', 'pass2'].includes(phase) && canCancel">
-          <button class="btn btn-default" @click="menu('CPT')">Cancel Passing</button>
+          <button class="btn btn-default line" @click="menu('CPT')">Cancel<br>Passing</button>
         </div>
         <div v-else class="dropdown">
           <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Menu
@@ -30,10 +30,12 @@
             <li :class="{disabled: !canTurnInCards}"><a class="btn-default" @click="menu('TIC')">Turn In Cards</a></li>
             <li><a class='btn-default' @click="menu('SMC')">See my Cards</a></li>
             <li><a class='btn-default' @click="menu('PI')">Players Info</a></li>
+            <li><a class='btn-default' @click="menu()">give me a card</a></li>
           </ul>
         </div>
         <div>
-          <button class="btn btn-success" :disabled="phase === 'initialTroops'" @click="menu('ET')">End Turn</button>
+          <button class="btn btn-success" :disabled="phase === 'initialTroops'"
+                        id="endTurnButton" @click="menu('ET')">End Turn</button>
         </div>
       </div>
       <ul class="info">
@@ -110,7 +112,15 @@ export default {
     font-size: 16px;
     z-index: 5;
   }
-  .header-content, .header-buttons{
+  .header-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .header-buttons {
+    margin-right: 5px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -141,7 +151,7 @@ export default {
   }
 
   .header-buttons > div{
-    margin-right: 10px;
+    margin: 2px 5px;
   }
 
   #icon {
@@ -155,9 +165,12 @@ export default {
     pointer-events: none;
   }
   #volumeSlider {
-  width: 50px;
-  margin-top: 5px;
-}
+    width: 50px;
+    margin-top: 5px;
+ }
+ .line{
+    font-size: 11px;
+ }
 
 @media(max-width: 675px){
   nav {

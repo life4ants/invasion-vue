@@ -7,8 +7,8 @@
     <div class="wrapper">
       <invasion-map :clicker="clicker"></invasion-map>
     </div>
-    <popup :show="popup.show" :closePopup="closePopup" :action="popup.action" :players="game.players" :size="popup.size"
-           :type="popup.type" :title="popup.title" :content="popup.content" :data="popup.data" :repeatAttack="repeatAttack"></popup>
+    <popup :show="popup.show" :closePopup="closePopup" :action="popup.action" :size="popup.size" :type="popup.type"
+           :title="popup.title" :content="popup.content" :data="popup.data" :repeatAttack="repeatAttack"></popup>
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase" :terr="selected"></app-footer>
@@ -54,8 +54,8 @@ export default {
       const content = "<p class='indent'>The territories have been randomly asigned. Each player will distribute troops in turn.</p><p class='indent'><strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
       this.openPopup('info', 'small', "Distribute Initial Troops", content)
     }
-    else if (this.game.phase === "addTroops")
-      this.showReservesMessage()
+    else
+      this.watchTurnMessage()
   },
   destroyed(){
     window.onbeforeunload = undefined
@@ -64,6 +64,23 @@ export default {
   },
   watch: {
     turnMessage(){
+      this.watchTurnMessage()
+    }
+  },
+  computed: {
+    game(){
+      return this.$store.getters.game()
+    },
+    currentPlayer(){
+      return this.game.players[this.game.turnIndex]
+    },
+    turnMessage(){
+      return this.$store.getters.turnMessage()
+    }
+  },
+  methods: {
+    // ========= Watch action responders: =========
+    watchTurnMessage(){
       switch (this.game.turnMessage.type){
         case 'InTrps':
           const troops = this.currentPlayer.tempReserves
@@ -83,21 +100,7 @@ export default {
           break
         default:
       }
-    }
-  },
-  computed: {
-    game(){
-      return this.$store.getters.game()
     },
-    currentPlayer(){
-      return this.game.players[this.game.turnIndex]
-    },
-    turnMessage(){
-      return this.$store.getters.turnMessage()
-    }
-  },
-  methods: {
-    // ========= Watch action responders: =========
     showReservesMessage(){
       const data = this.game.turnMessage.data
       let content = "<p><strong>"+this.currentPlayer.name +", it is your turn.</strong> You have "+this.currentPlayer.terrCount+
@@ -112,7 +115,7 @@ export default {
         content += "</ul>"
       }
       content+="<strong>You have a total of "+(data.countryPoints+data.conPoints)+" troops to distribute.</strong>"
-      this.openPopup('info', 'small', this.currentPlayer.name+"\'s Turn!", content)
+      this.openPopup('callback', 'small', this.currentPlayer.name+"\'s Turn!", content, () => this.checkCards())
     },
 
     showCardsMessage(){
@@ -151,6 +154,9 @@ export default {
           break
         case 'SMC':
           this.showCards(false)
+          break
+        default:
+          this.$store.commit("drawCard", this.game.turnIndex)
       }
     },
     clicker(i){
@@ -267,7 +273,6 @@ export default {
       const redLose = losses.redLose != 1 ? losses.redLose+" troops" : losses.redLose+" troop"
       const whiteLose = losses.whiteLose != 1 ? losses.whiteLose+" troops" : losses.whiteLose+" troop"
       const content = this.currentPlayer.name + ", you lost "+redLose+". "+this.game.players[this.attack.defendTerr.owner].name+" lost "+whiteLose+"."
-      this.closePopup()
       sounds.playAttack3()
       this.$store.dispatch("attack", losses).then((conquered) => {
         if (conquered)
@@ -331,9 +336,10 @@ export default {
 
     // ========== End Turn/ Turn in Cards: ===============
     endTurnButton(){
+      $("#endTurnButton").blur()
       if (['pass1', 'pass2'].includes(this.game.phase)){
         this.resetPassData()
-        this.drawCard()// which will call endTurn()
+        this.drawCard()
       }
       else {
         const content = this.currentPlayer.name+", do you want to pass troops before ending your turn?"
@@ -341,7 +347,6 @@ export default {
       }
     },
     confirmPassing(pass){
-      this.closePopup()
       if (pass){
         const content2 = "<p>Click on a passing territory, then click on a territory to pass the troops to.</p><p>Full instructions for passing: <i>coming soon!</i></p>"
         this.openPopup('info', 'small', "Rules for Passing Troops", content2)
@@ -350,7 +355,7 @@ export default {
         $(".selected").removeClass("selected")
       }
       else
-        this.drawCard()// which will call endTurn()
+        this.drawCard()
     },
     endTurn(){
       this.$store.dispatch('endTurn')
@@ -364,10 +369,18 @@ export default {
       else
         this.openPopup("callback", "small", "No card was drawn because no territories were taken!", '', () => this.endTurn())
     },
+    checkCards(){
+      if (this.currentPlayer.mustTurnInCards){
+        const content = this.currentPlayer.name+", you have "+this.currentPlayer.cards.length+" cards. You must turn in cards now."
+        this.openPopup('callback', 'small', 'You must turn in cards', content, () => this.turnInCards())
+      }
+      else
+        this.closePopup()
+    },
     showCards(endTurn){
       let action = endTurn ? () => this.endTurn() : () => this.closePopup()
       let cards = this.currentPlayer.cards.map((val) => this.game.shuffledCards[val].number)
-      this.openPopup('cards', '', this.currentPlayer.name+"\'s Cards", '', action, cards)
+      this.openPopup('cards', '', this.currentPlayer.name+"\'s cards", '', action, {cards})
     },
     turnInCards(){
       if (this.game.canTurnInCards){
@@ -378,11 +391,88 @@ export default {
           lowcards.push(this.game.shuffledCards[cards[i]].number-1)
           highcards.push(this.game.shuffledCards[cards[i]].number)
         }
-        if (gameData.checkSetOfCards(lowcards))
-          this.openPopup('turnInCards', '', "Turn In Cards", '', () => this.closePopup(), highcards)
+        if (this.game.setsTurnedIn < this.game.settings.numOfSets){
+          if (gameData.checkSetOfCards(lowcards))
+            this.openPopup('turnInCards', '', "Turn In Cards", '', () => this.closePopup(),
+            {cards: highcards, currentPlayer: this.currentPlayer})
+            //(popup commits turn in cards directly, so when it is done all we need to do is close popup)
+          else
+            this.openPopup("alert", "small", "You do not have a set of cards to turn in!")
+        }
         else
-          this.openPopup("alert", "small", "You do not have a set of cards to turn in!")
+          this.openPopup('alert', 'small', 'Max number of sets already turned in!')
       }
+      else
+        console.error("attempt to turn in cards when it is not allowed")
+    },
+
+    //============== end game / save game: ==========
+    checkForChanges(){
+      if (this.game.id === null)
+        return true
+      const games = JSON.parse(localStorage.invasionGames)
+      let gameId = games.findIndex((e) => e.id === this.game.id)
+      return !(JSON.stringify(games[gameId]) === JSON.stringify(this.game))
+    },
+    confirmEndGame(){
+      if (this.checkForChanges())
+        this.openPopup('confirm', 'small', 'Close Game', "Do you want to save your game before closing?", (x) => this.endGame(x))
+      else
+        this.openPopup('yesno', 'small', 'Are you sure you want to close the game?', '', () => this.close())
+    },
+    endGame(save){
+      if (save){
+        if (this.game.id != null){
+          this.saveGame(this.game.id)
+          this.close()
+        }
+        else {
+          this.openPopup('input', 'small', 'Save Game', "Please name your game:", (x, name) => {
+            if (x){
+              this.$store.commit('setName', name)
+              this.saveGame()
+              this.close()
+            }
+            else
+              this.confirmEndGame()
+          })
+        }
+      }
+      else
+        this.close()
+    },
+    saveGameButton(){
+      if (this.game.id === null){
+        this.openPopup('input', 'small', 'Save Game', "Please name your game:", (x, name) => {
+            if (x){
+              this.$store.commit('setName', name)
+              this.saveGame()
+              this.closePopup()
+              this.openAlert("The game was saved!")
+            }
+            else
+              this.closePopup()
+          })
+      }
+      else{
+        this.saveGame(this.game.id)
+        this.openAlert("The game was saved!")
+      }
+    },
+    saveGame(id){
+      let games = JSON.parse(localStorage.invasionGames)
+      if (id === undefined){
+        let id = games.length > 0 ? games[games.length-1].id+1 : 0
+        this.$store.commit('setId', id)
+        games.push(this.game)
+      }
+      else {
+        let gameId = games.findIndex((e) => e.id === id)
+        if (gameId === -1)
+          console.error("error in saving game with id", id)
+        games[gameId] = this.game
+      }
+      localStorage.setItem('invasionGames', JSON.stringify(games))
     },
 
     //============== Passing Troops: =============
@@ -451,86 +541,15 @@ export default {
         this.$store.commit("setPhase", "pass1")
     },
 
-    //============== end game / save game: ==========
-    checkForChanges(){
-      if (this.game.id === null)
-        return true
-      const games = JSON.parse(localStorage.invasionGames)
-      let gameId = games.findIndex((e) => e.id === this.game.id)
-      return !(JSON.stringify(games[gameId]) === JSON.stringify(this.game))
-    },
-    confirmEndGame(){
-      if (this.checkForChanges())
-        this.openPopup('confirm', 'small', 'Close Game', "Do you want to save your game before closing?", (x) => this.endGame(x))
-      else
-        this.openPopup('yesno', 'small', 'Are you sure you want to close the game?', '', () => this.close())
-    },
-    endGame(save){
-      if (save){
-        if (this.game.id != null){
-          this.saveGame(this.game.id)
-          this.close()
-        }
-        else {
-          this.openPopup('input', '', 'Save Game', "Please name your game:", (x, name) => {
-            if (x){
-              this.$store.commit('setName', name)
-              this.saveGame()
-              this.close()
-            }
-            else
-              this.confirmEndGame()
-          })
-        }
-      }
-      else
-        this.close()
-    },
-    saveGameButton(){
-      if (this.game.id === null){
-        this.openPopup('input', '', 'Save Game', "Please name your game:", (x, name) => {
-            if (x){
-              this.$store.commit('setName', name)
-              this.saveGame()
-              this.closePopup()
-              this.openAlert("The game was saved!")
-            }
-            else
-              this.closePopup()
-          })
-      }
-      else{
-        this.saveGame(this.game.id)
-        this.openAlert("The game was saved!")
-      }
-    },
-    saveGame(id){
-      let games = JSON.parse(localStorage.invasionGames)
-      if (id === undefined){
-        let id = games.length > 0 ? games[games.length-1].id+1 : 0
-        this.$store.commit('setId', id)
-        games.push(this.game)
-      }
-      else {
-        let gameId = games.findIndex((e) => e.id === id)
-        if (gameId === -1)
-          console.error("error in saving game with id", id)
-        games[gameId] = this.game
-      }
-      localStorage.setItem('invasionGames', JSON.stringify(games))
-    },
-
     // ======= Popups: ===========
     openPopup(type, size, title, content, action, data){
       this.popup = {show: true, type, size, title, content, action, data}
-      console.log('popup opened')
     },
     closePopup(){
       this.popup = {show: false}
-      console.log("popup closed")
     },
     showAllPlayers(){
-      this.openPopup('players', 'small', 'Players Info')
+      this.openPopup('players', 'small', 'Players Info', '', '', {players: this.game.players, cardValue: this.game.cardSetValue})
     },
     openAlert(content){
       this.alert = {show: true, content}
@@ -559,7 +578,7 @@ export default {
 }
 @media(min-width: 760px){
   .game{
-    padding-top: 94px;
+    padding-top: 102px;
   }
 }
 @media(min-width: 865px){

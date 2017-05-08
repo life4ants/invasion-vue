@@ -7,7 +7,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     game: {},
-    version: 5
+    version: 6
   },
 
 
@@ -73,13 +73,17 @@ export default new Vuex.Store({
         value += 3
       else
         value += 5
+      state.game.cardSetValue = value
     },
-    drawCard(state, player){
-      state.game.players[player].cards.push(state.game.nextCard)
+    drawCard(state, playerId){
+      const player = state.game.players[playerId]
+      player.cards.push(state.game.nextCard)
+      player.getsCard = false
+      if (player.cards.length >= state.game.settings.numOfCards)
+        player.mustTurnInCards = true
       state.game.nextCard++
       if (state.game.nextCard > 94)
         state.game.nextCard = 0
-      state.game.players[player].getsCard = false
     },
 
     //============== General Setters: ==============
@@ -101,16 +105,18 @@ export default new Vuex.Store({
       state.game.players[state.game.turnIndex].reserves = pl.countryPoints + pl.conPoints
       state.game.phase = 'addTroops'
       state.game.canTurnInCards = true
+      state.game.setsTurnedIn = 0
       state.game.turnMessage = {type: 'Trps', data: pl}
     },
     //==========Saving and Creating Games: ============
     createGame(state, pl){
       const data = gameData.setUpGame(pl.players)
-      state.game = {version: 5, //change to any value in game needs to up version number
+      state.game = {version: 6, //change to any value in game needs to up version number
                     id: null,
                     name: '',
                     nextCard: 0,
                     canTurnInCards: false,
+                    setsTurnedIn: 0,
                     cardSetValue: 4,
                     gameOver: false,
                     players: data.players,
@@ -126,8 +132,14 @@ export default new Vuex.Store({
     loadGame(state, game){
       if (game.version === 4){
         game.settings = {defenseWinsTie: false, numOfSets: 2, numOfCards: 8}
-        game.version = 5
+        game.setsTurnedIn = 0
+        game.version = 6
         console.log("version 4 game updated")
+      }
+      else if (game.version === 5){
+        game.setsTurnedIn = 0
+        game.version = 6
+        console.log("version 5 game updated")
       }
       state.game = game
     },
@@ -202,6 +214,7 @@ export default new Vuex.Store({
           let looser = state.game.players[i].name
           commit("deletePlayer", i)
           state.game.canTurnInCards = true
+          state.game.setsTurnedIn = 0
           return [true, looser]
         }
       }
@@ -218,6 +231,7 @@ export default new Vuex.Store({
       let output = {reserves: state.game.cardSetValue, total: 0, ids: []}
       commit("addReserves", state.game.cardSetValue)
       commit("upCardSetValue")
+      state.game.setsTurnedIn++
       for (let i=cards.length-1; i>=0; i--){
         let terr = state.game.territories[pl.values[i]]
         if (terr.owner === state.game.turnIndex){
@@ -228,6 +242,7 @@ export default new Vuex.Store({
         player.cards.splice(cards[i], 1)
       }
       state.game.phase = "addTroops"
+      player.mustTurnInCards = false
       state.game.turnMessage = {type: 'Cards', data: output}
     }
   }

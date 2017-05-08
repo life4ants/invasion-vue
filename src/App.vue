@@ -100,16 +100,17 @@ export default {
     text-align: left;
   }
 
-  @media(min-width:768px) {
+  @media(min-width:500px) {
 
   #popup .modal-dialog{
     width: 400px;
+    margin: 30px auto;
   }
 
   #popup-center .modal-dialog{
     width: 400px;
     top: 50%;
-    margin: 0x auto;
+    margin: 0 auto;
     transform: translateY(-50%);
   }
 }
@@ -119,10 +120,14 @@ export default {
     }
   }
 
-
   @media(min-width: 620px){
     .dashboard{
       margin: auto;
+    }
+  }
+  @media(min-width: 768px){
+    #popup-big .modal-dialog {
+      width: 750px;
     }
   }
   @media(min-width: 1200px){

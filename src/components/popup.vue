@@ -12,29 +12,32 @@
         <!-- ====== body: ======= -->
         <div v-if="'players' === type" class="modal-body">
           <ul>
-            <li v-for='player in players'>
+            <li v-for='player in data.players'>
               <icon :code='player.code' ></icon>
               <h4>{{player.name}}:</h4>
               <div>{{player.terrCount}} Territories</div>
+              <div>{{player.cards.length}} {{player.cards.length === 1 ? "card" : "cards"}}</div>
             </li>
           </ul>
+          <span>A set of cards is worth {{data.cardValue}} troops.</span>
         </div>
         <div v-else-if="['cards', 'turnInCards'].includes(type)" class="modal-body">
           <div v-if="type === 'turnInCards'">
             <label>Please select three cards to turn in: </label>
           </div>
-          <div v-if="data.length > 0" class="cardBox">
-            <card v-for="(card, key) in data" :value="card" :key="key" :index="key" :clickHandler="selectCard"></card>
+          <div v-if="data.cards.length > 0" class="cardBox">
+            <card v-for="(card, key) in data.cards" :value="card" :key="key" :index="key" :clickHandler="selectCard"></card>
           </div>
           <div v-else><i>You do not have any cards!</i></div>
-          <span style="float: right;"><i>{{error}}</i></span>
+          <span class="right"><i>{{error}}</i></span>
         </div>
         <div v-else-if="'passTroops' === type" class="modal-body">
           <label>Enter number of Troops to pass:</label>
-          <input id="troops" type="number"  @keyup.enter="action(troops)"
+          <input id="troops" type="number"  @keyup.enter="checkTroops"
                 :min="data.min" :max="data.max" v-model.number="troops">
           <label>This will leave behind:</label>
-          <span>{{behind}}</span>
+          <span>{{behind}}</span><br>
+          <i class="right">{{error}}</i>
         </div>
         <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-body center" >
           <input type="radio" id="one" :value="1" v-model="dice">
@@ -44,13 +47,13 @@
           <input v-if="data" type="radio" id="three" :value="3" v-model="dice">
           <label v-if="data" for="three">Three</label>
         </div>
-        <div v-else-if="['alert', 'yesno', 'yesnocancel', 'callback'].includes(type)"></div>
+        <div v-else-if="['alert', 'yesno', 'yesnocancel'].includes(type)"></div>
         <div v-else-if="type === 'input'" class="modal-body">
           <label>{{content}}</label>
           <input type="text" v-model="name" maxlength="22" id="nameInput" @keyup.enter="checkName" @keyup.esc="cancel">
           <i>{{error}}</i>
         </div>
-        <div v-else class="modal-body" v-html="content"></div> <!-- used by: confirm, info -->
+        <div v-else-if="content" class="modal-body" v-html="content"></div> <!-- used by: confirm, info, callback -->
 
         <!-- =====. footer: ====== -->
         <div v-if="'yesno' === type" class="modal-footer">
@@ -80,7 +83,7 @@
         </div>
         <div v-else-if="'passTroops' === type" class="modal-footer">
           <button v-if="title === 'Pass Troops'" type="button" class="btn btn-default" id="esc" @click="action(0)">Cancel</button>
-          <button type="button" class="btn btn-success" id="etr" @click="action(troops)">Ok</button>
+          <button type="button" class="btn btn-success" id="etr" @click="checkTroops">Ok</button>
         </div>
         <div v-else class="modal-footer"> <!-- used by: alert,players, info -->
           <button type="button" class="btn btn-default" id="etr" @click="closePopup">Ok</button>
@@ -104,8 +107,7 @@
     },
 // All Types: alert, confirm, input, players, yesno, yesnocancel, info, dicepick1, dicepick2, passtroop, callback, cards, turnInCards
     props: [
-      'title', 'content', 'type',
-      'players', 'show', 'closePopup',
+      'title', 'content', 'type', 'show', 'closePopup',
       'action', 'size', 'data', 'repeatAttack'
     ],
     data(){
@@ -127,14 +129,14 @@
       checkValue(){
         if (this.type === 'input')
           this.checkName()
-        else
+        else if (this.type === 'turnInCards')
           this.checkCards()
       },
       checkCards(){
         if (this.selectedCards.length != 3)
           this.error = "Please select exactly three cards"
         else {
-          let cards = this.selectedCards.sort().map((val) => this.data[val]-1)//LOW values
+          let cards = this.selectedCards.sort().map((val) => this.data.cards[val]-1)//LOW values
           if (gameData.checkSetOfCards(cards)){
             this.$store.dispatch('turnInCards', {ids: this.selectedCards, values: cards})
             this.error = ''
@@ -155,11 +157,31 @@
           this.action(true, name)
         }
       },
+      checkTroops(){
+        if (this.troops < this.data.min || this.troops > this.data.max)
+          this.error = "must be between "+this.data.min+" and "+this.data.max
+        else {
+          this.error = ''
+          this.action(this.troops)
+        }
+      },
       cancel(){
-        this.selectedCards = []
-        this.error = ''
-        this.name = ''
-        this.action(false)
+        if (this.type === 'input'){
+          this.error = ''
+          this.name = ''
+          this.action(false)
+        }
+        else if (this.type === "turnInCards"){
+          if (this.data.currentPlayer.mustTurnInCards){
+            this.error = "You cannot cancel. You MUST turn in cards"
+          }
+          else{
+            this.selectedCards = []
+            this.error = ''
+            this.action()
+          }
+        }
+
       },
       selectCard(i){
         if ($("#card"+i).hasClass('selected')){
@@ -172,7 +194,6 @@
         }
       },
       keyHandler(event) {
-        console.log(event.key+" was pressed")
         if (this.show){
           if (event.key === "Enter") {
             $('#etr').click()
@@ -182,7 +203,6 @@
           }
         }
         else {
-          console.log("no popup")
           if (event.key === "r")
             this.repeatAttack()
         }
@@ -195,7 +215,7 @@
         else if (this.size === 'small-center')
           return 'popup-center'
         else
-          return null
+          return "popup-big"
       },
       behind(){
         return this.data.max+1 - this.troops
@@ -232,7 +252,10 @@
     margin-left: 15px;
   }
   li div {
-    margin-left: 5px;
+    margin-right: 20px;
+  }
+  .right {
+    float: right;
   }
   .modal {
     transition: all 0.4s ease;
