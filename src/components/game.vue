@@ -12,6 +12,7 @@
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase" :terr="selected"></app-footer>
+    <AIplayer :openPopup="openPopup"></AIplayer>
   </div>
 </template>
 
@@ -25,11 +26,12 @@ import popup from './popup'
 import alert from './Alert'
 import footer from './footer'
 import sounds from './sounds.js'
+import AIplayer from './AIplayer'
 
 export default {
   name: 'game',
   components: {
-    setup, board, popup, alert,
+    setup, board, popup, alert, AIplayer,
     'app-footer': footer,
     'app-header': header,
     'invasion-map': invasionMap
@@ -75,7 +77,7 @@ export default {
       return this.game.players[this.game.turnIndex]
     },
     turnMessage(){
-      return this.$store.getters.turnMessage()
+      return this.game.turnMessage
     }
   },
   methods: {
@@ -92,8 +94,15 @@ export default {
           sounds.playStartTurn()
           break
         case 'StTurn':
-          content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
-          this.openPopup('info', 'small-center', 'Distribution Complete', content)
+          if (['attack1', 'attack2'].includes(this.game.phase)){
+            content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
+            this.openPopup('info', 'small-center', 'Distribution Complete', content)
+          }
+          else { //this should only run on Mounted(). phase should be pass1 or pass2
+            if (this.game.phase === 'pass2')
+              this.$store.commit("setPhase", 'pass1')
+            this.passingInfo()
+          }
           break
         case 'Cards':
           this.showCardsMessage()
@@ -247,9 +256,9 @@ export default {
     },
     pickDice1(){
       if (this.attack.attackTerr.reserves > 2){
-        const threedice = this.attack.attackTerr.reserves > 3 ? true : false
+        const threeDice = this.attack.attackTerr.reserves > 3 ? true : false
         const title = this.currentPlayer.name + ", please pick number of dice to roll:"
-        this.openPopup("dicepick1", 'small-center', title, '', (i) => this.pickDice2(i), threedice)
+        this.openPopup("dicepick1", 'small-center', title, '', (i) => this.pickDice2(i), {threeDice})
       }
       else
         this.pickDice2(1)
@@ -259,18 +268,24 @@ export default {
         this.cancelAttack()
       else {
         if (this.attack.defendTerr.reserves > 1){
-          if (!sounds.attack2.paused)
-            sounds.attack2.currentTime = 0
-          else
-            sounds.attack2.play()
-          const title = this.game.players[this.attack.defendTerr.owner].name + ", please pick number of dice to roll:"
-          this.openPopup("dicepick2", 'small-center', title, '', (i) => this.attackModal(redDice, i), false)
+          const autoroll = this.game.players[this.attack.defendTerr.owner].settings.autoroll
+          if (autoroll)
+            this.attackResult(redDice, autoroll)
+          else {
+            if (!sounds.attack2.paused)
+              sounds.attack2.currentTime = 0
+            else
+              sounds.attack2.play()
+            const title = this.game.players[this.attack.defendTerr.owner].name + ", please pick number of dice to roll:"
+            this.openPopup("dicepick2", 'small-center', title, '',
+              (i) => this.attackResult(redDice, i), {threeDice: false, id: this.attack.defendTerr.owner})
+          }
         }
         else
-          this.attackModal(redDice, 1)
+          this.attackResult(redDice, 1)
       }
     },
-    attackModal(redDice, whiteDice){
+    attackResult(redDice, whiteDice){
       let losses = gameData.runAttack(redDice, whiteDice, this.game.settings.defenseWinsTie)
       Object.assign(losses, losses, this.attack)
       const redLose = losses.redLose != 1 ? losses.redLose+" troops" : losses.redLose+" troop"
@@ -350,15 +365,17 @@ export default {
       }
     },
     confirmPassing(pass){
-      if (pass){
-        const content2 = "<p>Click on a passing territory, then click on a territory to pass the troops to.</p><p>Full instructions for passing: <i>coming soon!</i></p>"
-        this.openPopup('info', 'small', "Rules for Passing Troops", content2)
-        this.attackLine = ''
-        this.$store.commit('setPhase', 'pass1')
-        $(".selected").removeClass("selected")
-      }
+      if (pass)
+        this.passingInfo()
       else
         this.drawCard()
+    },
+    passingInfo(){
+      const content = "<p>Click on a passing territory, then click on a territory to pass the troops to. Click End Turn when you are done.</p>"
+      this.openPopup('info', 'small', "Rules for Passing Troops", content, '', 'passRules')
+      this.attackLine = ''
+      this.$store.commit('setPhase', 'pass1')
+      $(".selected").removeClass("selected")
     },
     endTurn(){
       this.$store.dispatch('endTurn')

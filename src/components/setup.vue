@@ -38,7 +38,7 @@
       </span><br>
       <a href="#" @click="showHoldCards">{{holdCardsShown ? "hide details" : "show details" }}</a><br>
       <p v-if="holdCardsShown">
-        This decribes the maximum number of cards a player can have before they must turn in cards and how many sets of cards a player may turn in at one time.
+        This describes the maximum number of cards a player can have before they must turn in cards and how many sets of cards a player may turn in at one time.
         <ul>
           <li>High: 11 cards max, three sets at a time</li>
           <li>Medium: 8 cards max, two sets at a time</li>
@@ -51,13 +51,18 @@
     <div v-if="step === 2">
       <div>
         <h4>Player {{currentPlayer+1}}</h4>
+        <label>Human</label>
+        <input type="radio" :value="false" v-model="isBot">
+        <label>AI</label>
+        <input type="radio" :value="true" v-model="isBot">
         <label>Name:</label>
         <input v-model='players[currentPlayer].name' maxlength="22"><br>
         <i>{{error}}</i>
-      </div>
-      <iconbox :code="filteredCode" :changeIcon='changeIcon'></iconbox>
-      <div class="icon">
-        <icon :code="code" :size=40></icon>
+        <iconbox v-if="isBot" :double="false" :code="filteredCode" :changeIcon='changeIcon'></iconbox>
+        <iconbox v-else :double="true" :code="filteredCode" :changeIcon='changeIcon'></iconbox>
+        <div class="icon">
+          <icon :code="code" :size=40></icon>
+        </div>
       </div>
     </div>
     <div v-if="step === 3">
@@ -93,6 +98,7 @@ export default {
     return {
       step: 1,
       code: -1,
+      isBot: false,
       currentPlayer: 0,
       players: [{name: '', code: -1}],
       shuffledPlayers: [],
@@ -139,10 +145,11 @@ export default {
       if (this.step === 1){
         this.players = []
         for (let i=0; i<this.numOfPlayers; i++){
-          this.players[i] = {name: '', code: -1, terrCount: 0,
-          cards: [], getsCard: false, mustTurnInCards: false, settings: {autoroll: false}} //change here needs to up version number
+          this.players[i] = {name: '', code: -1, terrCount: 0, cards: [], getsCard: false, isBot: false,
+          mustTurnInCards: false, settings: {autoroll: false}} //change here needs to up version number
         }
         this.code = -1
+        this.isBot = false
         this.step++
       }
       else if (this.step === 3){
@@ -153,13 +160,12 @@ export default {
       else {
         const verify = this.verify()
         if (verify === 'OK' && this.currentPlayer < this.numOfPlayers-1) {
-          this.players[this.currentPlayer].code = this.code
+          this.setData()
           this.currentPlayer++
-          this.error = ''
-          this.code = this.players[this.currentPlayer].code
+          this.retriveData()
         }
         else if (verify === 'OK'){
-          this.players[this.currentPlayer].code = this.code
+          this.setData()
           const players = this.players
           this.shuffledPlayers = GameData.shuffle(players)
           this.step++
@@ -171,13 +177,21 @@ export default {
     },
     lastStep(){
       if (this.currentPlayer > 0 && this.step === 2){
-        this.players[this.currentPlayer].code = this.code
+        this.setData()
         this.currentPlayer--
-        this.code = this.players[this.currentPlayer].code
-        this.error = ''
+        this.retriveData()
       }
       else
         this.step--
+    },
+    retriveData(){
+      this.code = this.players[this.currentPlayer].code
+      this.isBot = this.players[this.currentPlayer].isBot
+      this.error = ''
+    },
+    setData(){
+      this.players[this.currentPlayer].code = this.code
+      this.players[this.currentPlayer].isBot = this.isBot
     },
     verify(){
       this.players[this.currentPlayer].name = this.players[this.currentPlayer].name.replace(/^\s+|\s+$/g, '')
@@ -203,6 +217,11 @@ export default {
     },
     finishText(){
       return this.step === 3 ? 'Start Game' : 'Finish'
+    }
+  },
+  watch: {
+    isBot(){
+      this.code = this.isBot ? 100 : -1
     }
   }
 }

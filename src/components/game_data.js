@@ -277,8 +277,10 @@ var territoryInfo = [
     var whiteLose = 0;
     var redLose = 0;
     var tie = 0;
+    console.log("defenseWinsTie is:", defenseWinsTie)
 
     if (W === 2){
+      console.log("defender rolled:", diceW[0], diceW[1])
       if (diceW[0] > diceW[1]){
         white_high = diceW[0];
         white_low = diceW[1];
@@ -289,15 +291,18 @@ var territoryInfo = [
       }
     }
     else {
+      console.log("defender rolled:", diceW[0])
       white_high = diceW[0];
       white_low = 0;
     }
 
     if (R === 1) {
+      console.log("attacker rolled:", diceR[0])
       red_high = diceR[0];
       red_low = 0;
     }
     else if (R === 2) {
+      console.log("attacker rolled:", diceR[0], diceR[1])
       if (diceR[0] > diceR[1]){
         red_high = diceR[0];
         red_low = diceR[1];
@@ -308,6 +313,7 @@ var territoryInfo = [
       }
     }
     else if (R === 3){
+      console.log("attacker rolled:", diceR[0], diceR[1], diceR[2])
       if (diceR[0] >= diceR[1] && diceR[0] > diceR[2]){ //diceR[0] is the biggest, or tied for biggest
         red_high = diceR[0];
         if (diceR[1] > diceR[2])
@@ -366,6 +372,7 @@ var territoryInfo = [
 
     return {whiteLose, redLose}
   },
+
   checkContinuity(territories, owner, startTerr, list){
     list.push(startTerr)
     for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){

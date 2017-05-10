@@ -9,12 +9,6 @@
     <h1>Welcome to Invasion!</h1>
     <p>Welcome Chingus! :) This is a game based on Risk. It is still in beta, you could say, but it is fully playable.</p>
     <p>Feel free to give feedback on anything - button colors, overall look, sound volume, anything!</p>
-    Coming soon:
-    <ul>
-      <li>AI players</li>
-      <li>Responsive for phones</li>
-      <li>Game and Player settings</li>
-    </ul><br><br>
     <button @click='start' class="btn btn-primary">Start New Game</button>
     <h3>Saved Games:</h3>
     <ul v-if="edit">

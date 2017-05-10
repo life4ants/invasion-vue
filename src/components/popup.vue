@@ -11,14 +11,14 @@
 
         <!-- ====== body: ======= -->
         <div v-if="'players' === type" class="modal-body">
-          <ul>
+          <ol>
             <li v-for='player in data.players'>
               <icon :code='player.code' ></icon>
               <h4>{{player.name}}:</h4>
               <div>{{player.terrCount}} Territories</div>
               <div>{{player.cards.length}} {{player.cards.length === 1 ? "card" : "cards"}}</div>
             </li>
-          </ul>
+          </ol>
           <span>A set of cards is worth {{data.cardValue}} troops.</span>
         </div>
 
@@ -46,8 +46,13 @@
           <label for="one">One</label>
           <input type="radio" id="two" :value="2" v-model="dice">
           <label for="two">Two</label>
-          <input v-if="data" type="radio" id="three" :value="3" v-model="dice">
-          <label v-if="data" for="three">Three</label>
+          <input v-if="data.threeDice" type="radio" id="three" :value="3" v-model="dice">
+          <label v-if="data.threeDice" for="three">Three</label>
+          <div class="alwaysRoll" v-if="'dicepick2' === type" >
+            <input type="checkbox" v-model="autoroll">
+            <label>Always roll {{dice === 2 ? "two dice" : "one die"}} and don't ask again</label>
+            <br><span>You can change this at any time in <code>Menu &#10140; My Settings</code></span>
+          </div>
         </div>
 
         <div v-else-if="'settings' === type" class="modal-body center">
@@ -68,8 +73,18 @@
           <i>{{error}}</i>
         </div>
 
-        <div v-else-if="content" class="modal-body" v-html="content"></div> <!-- used by: confirm, info, callback -->
-        <div v-else ></div> <!-- used by: alert, yesno, yesnocancel, callback -->
+        <div v-else-if="content" class="modal-body"><!-- used by: confirm, info, callback -->
+          <div v-html="content"></div>
+          <div v-if="data === 'passRules'">
+            <strong>Rules for passing: </strong><a href="#" @click="showRules">{{rulesShown ? "hide" : "show" }}</a>
+            <ul v-if="rulesShown">
+              <li>You have a total of 3 passes - 2 "short passes" and one "long pass".</li>
+              <li>A short pass is between 2 of your territories that border each other.</li>
+              <li>A long pass is between 2 of your territories that are connected by a continuous line of territories that you own.</li>
+            </ul>
+          </div>
+        </div>
+        <div v-else></div> <!-- used by: alert, yesno, yesnocancel, callback -->
 
         <!-- =====. footer: ====== -->
         <div v-if="'yesno' === type" class="modal-footer">
@@ -85,9 +100,12 @@
           <button type="button" class="btn btn-default" id="esc" @click="cancel">Cancel</button>
           <button type="button" class="btn btn-primary" id="etr" @click="checkValue">Ok</button>
         </div>
-        <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-footer">
-          <button v-if="'dicepick1' === type" type="button" class="btn btn-default" id="esc" @click="action(0)">Cancel</button>
+        <div v-else-if="'dicepick1' === type" class="modal-footer">
+          <button type="button" class="btn btn-default" id="esc" @click="action(0)">Cancel</button>
           <button type="button" class="btn btn-primary" id="etr" @click="action(dice)">Ok</button>
+        </div>
+        <div v-else-if="'dicepick2' === type" class="modal-footer">
+          <button type="button" class="btn btn-primary" id="etr" @click="dicepick2">Ok</button>
         </div>
         <div v-else-if="'confirm' === type" class="modal-footer">
           <button type="button" class="btn btn-default" id="esc" @click="closePopup">Cancel</button>
@@ -134,7 +152,8 @@
         dice: null,
         troops: null,
         selectedCards: [],
-        autoroll: false
+        autoroll: false,
+        rulesShown: false
       }
     },
     mounted(){
@@ -144,6 +163,9 @@
       window.removeEventListener('keyup', this.keyHandler)
     },
     methods: {
+      showRules(){
+        this.rulesShown = !this.rulesShown
+      },
       checkValue(){
         if (this.type === 'input')
           this.checkName()
@@ -192,6 +214,11 @@
         this.$store.commit("setAutoroll", {id: this.data.id, value: autoroll})
         this.name = ''
         this.closePopup()
+      },
+      dicepick2(){
+        if (this.autoroll)
+          this.$store.commit("setAutoroll", {id: this.data.id, value: this.dice})
+        this.action(this.dice)
       },
       cancel(){
         if (this.type === 'input'){
@@ -260,24 +287,28 @@
           this.troops = this.data.max
           setTimeout(() => $("#troops").trigger("focus"), 0)
         }
-        else if (['dicepick1', 'dicepick2'].includes(this.type))
-          this.dice = this.data ? 3 : 2
+        else if (['dicepick1', 'dicepick2'].includes(this.type)){
+          this.autoroll = false
+          this.dice = this.data.threeDice ? 3 : 2
+        }
         else if ('settings' === this.type){
           this.dice = this.data.currentPlayer.settings.autoroll ? this.data.currentPlayer.settings.autoroll : 2
           this.autoroll = this.data.currentPlayer.settings.autoroll ? true : false
           this.name = this.data.currentPlayer.name
         }
+        else if ('info' === this.type)
+          this.rulesShown = false
       }
     }
   }
 </script>
 
 <style scoped>
-  ul {
+  ol {
     list-style: none;
     padding: 0;
   }
-  li {
+  ol li {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -299,6 +330,16 @@
   }
   label {
     margin-right: 8px;
+  }
+  .alwaysRoll {
+    margin-top: 10px;
+  }
+  .alwaysRoll span {
+    font-size: 11px;
+  }
+  .alwaysRoll label {
+    margin: 0;
+    font-size: 13px;
   }
   .disabled {
     color: #999;

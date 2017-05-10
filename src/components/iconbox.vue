@@ -8,7 +8,7 @@
         </button>
       </div>
     </div>
-    <div class="iconbox">
+    <div v-if="double" class="iconbox">
       <label>Choose Shape:</label>
       <div>
         <button v-for="icon in renderShapes" class="btn btn-default" @click="changeIcon(icon)">
@@ -20,21 +20,12 @@
 </template>
 
 <script>
-
   import icon from './icon'
 
-  export default{
+  export default {
     name: 'iconbox',
-    components: {
-      icon
-    },
-    props: ['code', 'changeIcon'],
-    data(){
-      return {
-      }
-    },
-    methods:{
-    },
+    components: { icon },
+    props: ['code', 'changeIcon', 'double'],
     computed: {
       renderColors(){
         let shape = (this.code - (this.code % 10))

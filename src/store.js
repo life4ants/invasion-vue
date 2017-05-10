@@ -7,7 +7,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     game: {},
-    version: 7
+    version: 8
   },
 
 
@@ -118,7 +118,7 @@ export default new Vuex.Store({
     //==========Saving and Creating Games: ============
     createGame(state, pl){
       const data = gameData.setUpGame(pl.players)
-      state.game = {version: 7, //change to any value in game needs to up version number
+      state.game = {version: 8, //change to any value in game needs to up version number
                     id: null,
                     name: '',
                     nextCard: 0,
@@ -147,12 +147,13 @@ export default new Vuex.Store({
         game.version = 6
         console.log("upgrading to version 6")
       }
-      if (game.version === 6){
+      if (game.version != 8){
         for (let i=0; i<game.players.length; i++){
           game.players[i].settings = {autoroll: false}
+          game.players[i].isBot = false
         }
-        game.version = 7
-        console.log("upgrading to version 7")
+        game.version = 8
+        alert("upgrading to version 8")
       }
       state.game = game
     },
