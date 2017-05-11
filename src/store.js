@@ -7,7 +7,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     game: {},
-    version: 8
+    version: 9
   },
 
 
@@ -28,6 +28,10 @@ export default new Vuex.Store({
       const defendTerr = state.game.territories[pl.defendTerr.id-1]
       attackTerr.reserves -= pl.redLose
       defendTerr.reserves = null
+      const loser = state.game.players.findIndex((e) => e.id === defendTerr.owner)
+      state.game.players[loser].terrCount--
+      const winner = state.game.players.findIndex((e) => e.id === attackTerr.owner)
+      state.game.players[winner].terrCount++
       defendTerr.owner = attackTerr.owner
     },
     attackTerr(state, pl){
@@ -40,15 +44,16 @@ export default new Vuex.Store({
       state.game.territories[pl.passingTerr].reserves -= pl.troops
       state.game.territories[pl.recievingTerr].reserves += pl.troops
     },
-    countTerritories(state){
-      let counts = new Array(state.game.players.length).fill(0)
-      for(let i = 0; i<state.game.territories.length; i++){
-        counts[state.game.territories[i].owner]++
-      }
-      for (let i = 0; i<counts.length; i++){
-        state.game.players[i].terrCount = counts[i]
-      }
-    },
+    // countTerritories(state){
+    //   let players = state.game.players
+    //   let counts = {}
+    //   for(let i = 0; i<state.game.territories.length; i++){
+    //     counts[state.game.territories[i].owner]++
+    //   }
+    //   for (let i = 0; i<players.length; i++){
+    //     state.game.players[i].terrCount = counts[players[i].id]
+    //   }
+    // },
     deletePlayer(state, id){
       let winner = state.game.players[state.game.turnIndex]
       let loser = state.game.players[id]
@@ -75,8 +80,8 @@ export default new Vuex.Store({
         value += 5
       state.game.cardSetValue = value
     },
-    drawCard(state, playerId){
-      const player = state.game.players[playerId]
+    drawCard(state){
+      const player = state.game.players[state.game.turnIndex]
       player.cards.push(state.game.nextCard)
       player.getsCard = false
       if (player.cards.length >= state.game.settings.numOfCards)
@@ -112,13 +117,14 @@ export default new Vuex.Store({
       state.game.players[pl.id].name = pl.name
     },
     setAutoroll(state, pl){
-      state.game.players[pl.id].settings.autoroll = pl.value
+      const index = state.game.players.findIndex((e) => e.id === pl.id)
+      state.game.players[index].settings.autoroll = pl.value
     },
 
     //==========Saving and Creating Games: ============
     createGame(state, pl){
       const data = gameData.setUpGame(pl.players)
-      state.game = {version: 8, //change to any value in game needs to up version number
+      state.game = {version: 9, //change to any value in game needs to up version number
                     id: null,
                     name: '',
                     nextCard: 0,
@@ -147,13 +153,20 @@ export default new Vuex.Store({
         game.version = 6
         console.log("upgrading to version 6")
       }
-      if (game.version != 8){
+      if ([6, 7].includes(game.version)){
         for (let i=0; i<game.players.length; i++){
           game.players[i].settings = {autoroll: false}
           game.players[i].isBot = false
         }
         game.version = 8
         alert("upgrading to version 8")
+      }
+      if (game.version === 8){
+        for (let i=0; i<game.players.length; i++){
+          game.players[i].id = i
+        }
+        game.version = 9
+        console.log("upgrading to version 9")
       }
       state.game = game
     },
@@ -165,13 +178,13 @@ export default new Vuex.Store({
     },
 
     //=============== Troops and Reserves: ==========
-    addTroops(state, pl){
-      let player = state.game.players[pl.turnIndex]
-      state.game.territories[pl.terrId].reserves += 1
+    addTroops(state, terrId){
+      let player = state.game.players[state.game.turnIndex]
+      state.game.territories[terrId].reserves += 1
       player.reserves --
-      if (pl.phase === 'initialTroops')
+      if (state.game.phase === 'initialTroops')
         player.tempReserves --
-      state.game.players[pl.turnIndex] = player
+      state.game.players[state.game.turnIndex] = player
     },
     add2TroopsTo(state, terr){
       state.game.territories[terr].reserves += 2
@@ -183,10 +196,10 @@ export default new Vuex.Store({
 
 
   actions: {
-    initialTroops({commit, state}, pl){
-      let player = state.game.players[pl.turnIndex]
+    initialTroops({commit, state}, terrId){
+      let player = state.game.players[state.game.turnIndex]
       if (player.tempReserves > 0)
-        commit('addTroops', pl)
+        commit('addTroops', terrId)
       if (player.tempReserves <= 0){
         commit('nextTurn')
         let nextPlayer = state.game.players[state.game.turnIndex]
@@ -200,10 +213,10 @@ export default new Vuex.Store({
         }
       }
     },
-    addTroops({commit, state}, pl){
-      let player = state.game.players[pl.turnIndex]
+    addTroops({commit, state}, terrId){
+      let player = state.game.players[state.game.turnIndex]
       if (player.reserves > 0)
-        commit('addTroops', pl)
+        commit('addTroops', terrId)
       if (player.reserves <= 0){
         state.game.phase = "attack1"
         state.game.turnMessage = {type: 'StTurn'}
@@ -213,7 +226,6 @@ export default new Vuex.Store({
       state.game.canTurnInCards = false
       if (pl.defendTerr.reserves <= pl.whiteLose){
         commit("conquerTerr", pl)
-        commit("countTerritories")
         state.game.players[state.game.turnIndex].getsCard = true
         return true
       }

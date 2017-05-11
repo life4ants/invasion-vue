@@ -168,7 +168,7 @@ export default {
           this.showPlayerSettings()
           break
         default:
-          this.$store.commit("drawCard", this.game.turnIndex)
+          this.$store.commit("drawCard")
       }
     },
     clicker(i){
@@ -206,18 +206,22 @@ export default {
       this.selected = territory
     },
     addTroops(i){
-      if (this.game.territories[i-1].owner === this.game.turnIndex){
-        this.$store.dispatch(this.game.phase, {terrId: i-1, turnIndex: this.game.turnIndex, phase: this.game.phase})
+      if (this.game.territories[i-1].owner === this.currentPlayer.id){
+        this.$store.dispatch(this.game.phase, i-1)
         sounds.playTroops()
       }
       else
         this.openPopup('alert', 'small-center','That territory does not belong to you!')
     },
+    getPlayerById(id){
+      const index = this.game.players.findIndex((e) => e.id === id)
+      return this.game.players[index]
+    },
 
     //========== Attacking/Conquering: ============
     selectAttacker(i){
       let terr = this.game.territories[i-1]
-      if (terr.owner === this.game.turnIndex){
+      if (terr.owner === this.currentPlayer.id){
         if (terr.reserves > 1){
           this.select(i)
           this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
@@ -231,7 +235,7 @@ export default {
         this.openPopup('alert', 'small-center','That territory does not belong to you!')
     },
     selectAttacked(i){
-      if (this.game.territories[i-1].owner === this.game.turnIndex){
+      if (this.game.territories[i-1].owner === this.currentPlayer.id){
         if (this.game.territories[i-1].reserves > 1){
           $('.territory'+this.selected).removeClass("selected")
           this.select(i)
@@ -268,15 +272,15 @@ export default {
         this.cancelAttack()
       else {
         if (this.attack.defendTerr.reserves > 1){
-          const autoroll = this.game.players[this.attack.defendTerr.owner].settings.autoroll
-          if (autoroll)
-            this.attackResult(redDice, autoroll)
+          const defender = this.getPlayerById(this.attack.defendTerr.owner)
+          if (defender.settings.autoroll)
+            this.attackResult(redDice, defender.settings.autoroll)
           else {
             if (!sounds.attack2.paused)
               sounds.attack2.currentTime = 0
             else
               sounds.attack2.play()
-            const title = this.game.players[this.attack.defendTerr.owner].name + ", please pick number of dice to roll:"
+            const title = defender.name + ", please pick number of dice to roll:"
             this.openPopup("dicepick2", 'small-center', title, '',
               (i) => this.attackResult(redDice, i), {threeDice: false, id: this.attack.defendTerr.owner})
           }
@@ -290,7 +294,7 @@ export default {
       Object.assign(losses, losses, this.attack)
       const redLose = losses.redLose != 1 ? losses.redLose+" troops" : losses.redLose+" troop"
       const whiteLose = losses.whiteLose != 1 ? losses.whiteLose+" troops" : losses.whiteLose+" troop"
-      const content = this.currentPlayer.name + ", you lost "+redLose+". "+this.game.players[this.attack.defendTerr.owner].name+" lost "+whiteLose+"."
+      const content = this.currentPlayer.name + ", you lost "+redLose+". "+this.getPlayerById(this.attack.defendTerr.owner).name+" lost "+whiteLose+"."
       sounds.playAttack3()
       this.$store.dispatch("attack", losses).then((conquered) => {
         if (conquered)
@@ -343,8 +347,8 @@ export default {
       if (Object.keys(this.attack).length === 0)
         return
       else if (this.attack.attackTerr.reserves > 1 &&
-        this.attack.attackTerr.owner === this.game.turnIndex &&
-        this.attack.defendTerr.owner != this.game.turnIndex){
+        this.attack.attackTerr.owner === this.currentPlayer.id &&
+        this.attack.defendTerr.owner != this.currentPlayer.id){
         sounds.attack2.play()
         $('.territory'+this.attack.attackTerr.id).addClass("selected")
         $('.territory'+this.attack.defendTerr.id).addClass("selected")
@@ -382,7 +386,7 @@ export default {
     },
     drawCard(){
       if (this.currentPlayer.getsCard){
-        this.$store.commit("drawCard", this.game.turnIndex)
+        this.$store.commit("drawCard")
         this.showCards(true)
         sounds.viewCards.play()
       }
@@ -512,7 +516,7 @@ export default {
     },
     selectPasser(i){
       const owner = this.game.territories[i-1].owner
-      if (owner === this.game.turnIndex){
+      if (owner === this.currentPlayer.id){
         $('.territory'+i).addClass("selected")
         const list = gameData.checkContinuity(this.game.territories, owner, i, [])
         this.passData.terrs = list
@@ -524,7 +528,7 @@ export default {
     },
     selectPassie(i){
       const owner = this.game.territories[i-1].owner
-      if (owner === this.game.turnIndex){
+      if (owner === this.currentPlayer.id){
         this.passData.passie = i
         if (gameData.canFight(this.passData.passer, i))
           if (this.passData.short < 2)
@@ -555,8 +559,10 @@ export default {
       this.$store.commit("passTroops", data)
       $('.selected').removeClass('selected')
       this.closePopup()
-      if (this.passData.short + this.passData.long >= 3)
+      if (this.passData.short + this.passData.long >= 3){
+        this.resetPassData()
         this.drawCard()
+      }
       else
         this.$store.commit("setPhase", "pass1")
     },
@@ -581,7 +587,7 @@ export default {
     //====== Settings: ===========
     showPlayerSettings(){
       this.openPopup('settings', 'small', this.currentPlayer.name+"\'s settings", '', '',
-        {currentPlayer: this.currentPlayer, id: this.game.turnIndex})
+        {currentPlayer: this.currentPlayer, id: this.currentPlayer.id})
     }
   }
 }

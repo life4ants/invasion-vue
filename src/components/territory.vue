@@ -6,6 +6,7 @@
     <div :id="'label'+ id" class='T-label'>
       {{reserves}}
     </div>
+    <div class="terrId">{{id}}</div>
   </div>
 </template>
 
@@ -24,6 +25,14 @@
 </script>
 
 <style scoped>
+
+.terrId {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  font-size: 10px;
+  font-weight: 900;
+}
 
 .T-label
 {

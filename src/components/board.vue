@@ -1,7 +1,7 @@
 <template>
   <div class="overlay">
     <territory v-for="terr in territories" :id="terr.id" :key="terr.id"
-             :reserves="terr.reserves" :icon="players[terr.owner].code"></territory>
+             :reserves="terr.reserves" :icon="codes[terr.owner]"></territory>
   </div>
 </template>
 
@@ -14,6 +14,15 @@
     props: {
       territories: { type: Array },
       players: {type: Array}
+    },
+    computed: {
+      codes(){
+        let output = {}
+        for (let i=0; i<this.players.length; i++){
+          output[this.players[i].id] = this.players[i].code
+        }
+        return output
+      }
     }
   }
 </script>

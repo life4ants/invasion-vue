@@ -145,7 +145,7 @@ export default {
       if (this.step === 1){
         this.players = []
         for (let i=0; i<this.numOfPlayers; i++){
-          this.players[i] = {name: '', code: -1, terrCount: 0, cards: [], getsCard: false, isBot: false,
+          this.players[i] = {name: '', id: i, code: -1, terrCount: 0, cards: [], getsCard: false, isBot: false,
           mustTurnInCards: false, settings: {autoroll: false}} //change here needs to up version number
         }
         this.code = -1
