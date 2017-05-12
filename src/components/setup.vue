@@ -192,6 +192,7 @@ export default {
     setData(){
       this.players[this.currentPlayer].code = this.code
       this.players[this.currentPlayer].isBot = this.isBot
+      this.players[this.currentPlayer].settings.autoroll = this.isBot ? 2 : false
     },
     verify(){
       this.players[this.currentPlayer].name = this.players[this.currentPlayer].name.replace(/^\s+|\s+$/g, '')

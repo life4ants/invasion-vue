@@ -381,17 +381,6 @@ var territoryInfo = [
 
     return {whiteLose, redLose}
   },
-
-  checkContinuity(territories, owner, startTerr, list){
-    list.push(startTerr)
-    for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
-      let id = this.territoryInfo[startTerr].borders[i]
-      if (territories[id-1].owner === owner && !list.includes(id)){
-        list.concat(this.checkContinuity(territories, owner, id, list))
-      }
-    }
-    return list
-  },
   checkSetOfCards(cards){
     if (cards.length < 3)
       return false
@@ -410,6 +399,58 @@ var territoryInfo = [
         return true
     else
         return false
+  },
+  checkContinuity(territories, owner, startTerr, list){
+    list.push(startTerr)
+    for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
+      let id = this.territoryInfo[startTerr].borders[i]
+      if (territories[id-1].owner === owner && !list.includes(id)){
+        list.concat(this.checkContinuity(territories, owner, id, list))
+      }
+    }
+    return list
+  },
+  checkContinuityEx(territories, owner, startTerr, list, distances, dist){
+    list.push(startTerr)
+    distances.push(dist)
+    for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
+      let id = this.territoryInfo[startTerr].borders[i]
+      if (territories[id-1].owner === owner && !list.includes(id)){
+        let data = this.checkContinuityEx(territories, owner, id, list, distances, dist+1)
+        list.concat(data.list)
+        distances.concat(data.distances)
+      }
+    }
+    return {list, distances}
+  },
+  getDistances(list, dist){// [[44], []], 1
+    for (let i=0; i<list[dist-1].length; i++){
+      let bordering = this.territoryInfo[list[dist-1][i]].borders
+      for (let j=0; j<bordering.length; j++){
+        if (!list[dist-1].includes(bordering[j]) && !list[dist].includes(bordering[j])){
+          if (dist > 1 && !list[dist-2].includes(bordering[j]) || dist === 1)
+            list[dist].push(bordering[j])
+        }
+      }
+    }
+    if (list[dist].length < 1){
+      list.pop()
+      return list
+    }
+    else {
+      list.push([])
+      return this.getDistances(list, dist+1)
+    }
+
+  },
+  unique(a){
+    for(let i=0; i<a.length; ++i) {
+      for (let j=i+1; j<a.length; ++j) {
+        if(a[i] === a[j])
+          a.splice(j--, 1);
+      }
+    }
+    return a
   }
 }
 
@@ -447,36 +488,42 @@ window.testCards = (ar) => {
   return gameData.checkSetOfCards(ar)
 }
 window.testReserves = (turnIndex) => {
-let territories = []
-for (let i=0; i<90; i++){
-  if (i < 26)
-   territories[i] = {owner: 0}
-  else if (i < 33)
-    territories[i] = {owner: 1}
-  else if (i < 55)
-    territories[i] = {owner: 2}
-  else if (i < 67)
-    territories[i] = {owner: 3}
-  else if (i < 78)
-    territories[i] = {owner: 4}
-  else if (i < 85)
-    territories[i] = {owner: 5}
-  else
-    territories[i] = {owner: 6}
-}
+  let territories = []
+  for (let i=0; i<90; i++){
+    if (i < 26)
+     territories[i] = {owner: 0}
+    else if (i < 33)
+      territories[i] = {owner: 1}
+    else if (i < 55)
+      territories[i] = {owner: 2}
+    else if (i < 67)
+      territories[i] = {owner: 3}
+    else if (i < 78)
+      territories[i] = {owner: 4}
+    else if (i < 85)
+      territories[i] = {owner: 5}
+    else
+      territories[i] = {owner: 6}
+  }
 
-let game = {
-  players: [{code:22,name:"Fred",terrCount:26},
-              {code:53,name:"Bill",terrCount:7},
-              {code:15,name:"Roslyn",terrCount:22},
-              {code:41,name:"Maria",terrCount:12},
-              {code:36,name:"Kyle",terrCount:11},
-              {code:8,name:"Edward",terrCount:7},
-              {code:17,name:"Joseph",terrCount:5}],
-              territories,
-              turnIndex,
-              round: 1
+  let game = {
+    players: [{code:22,name:"Fred",terrCount:26},
+                {code:53,name:"Bill",terrCount:7},
+                {code:15,name:"Roslyn",terrCount:22},
+                {code:41,name:"Maria",terrCount:12},
+                {code:36,name:"Kyle",terrCount:11},
+                {code:8,name:"Edward",terrCount:7},
+                {code:17,name:"Joseph",terrCount:5}],
+                territories,
+                turnIndex,
+                round: 1
+  }
+  console.log(game.players[turnIndex])
+  console.log(gameData.getReserves(game))
 }
-console.log(game.players[turnIndex])
-console.log(gameData.getReserves(game))
+window.testDist = (id) => gameData.getDistances([[id], []], 1)
+window.selectIds = (ids) => {
+  for (let i=0; i<ids.length; i++){
+    $('.territory'+ids[i]).addClass('selected')
+  }
 }

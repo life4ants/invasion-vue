@@ -78,7 +78,7 @@
           <div v-if="data === 'passRules'">
             <strong>Rules for passing: </strong><a href="#" @click="showRules">{{rulesShown ? "hide" : "show" }}</a>
             <ul v-if="rulesShown">
-              <li>You have a total of 3 passes - 2 "short passes" and one "long pass".</li>
+              <li>You have a total of 3 passes - 2 short passes and one long pass (or 3 short passes)</li>
               <li>A short pass is between 2 of your territories that border each other.</li>
               <li>A long pass is between 2 of your territories that are connected by a continuous line of territories that you own.</li>
             </ul>

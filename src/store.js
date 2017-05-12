@@ -44,16 +44,6 @@ export default new Vuex.Store({
       state.game.territories[pl.passingTerr].reserves -= pl.troops
       state.game.territories[pl.recievingTerr].reserves += pl.troops
     },
-    // countTerritories(state){
-    //   let players = state.game.players
-    //   let counts = {}
-    //   for(let i = 0; i<state.game.territories.length; i++){
-    //     counts[state.game.territories[i].owner]++
-    //   }
-    //   for (let i = 0; i<players.length; i++){
-    //     state.game.players[i].terrCount = counts[players[i].id]
-    //   }
-    // },
     deletePlayer(state, id){
       let winner = state.game.players[state.game.turnIndex]
       let loser = state.game.players[id]

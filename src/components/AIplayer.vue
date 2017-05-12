@@ -6,7 +6,7 @@ import gameData from "./game_data.js"
 
 export default {
   name: 'AIplayer',
-  props: [ 'computerAttack', 'trigger'],
+  props: [ 'computerAttack', 'computerEndTurn', 'trigger'],
   data(){
     return {
       withinContinent: false
@@ -26,6 +26,7 @@ export default {
       return this.game.turnMessage
     }
   },
+
   watch: {
     currentPlayer(){
       if (this.currentPlayer.isBot){
@@ -47,7 +48,7 @@ export default {
       if (this.currentPlayer.isBot){
         if (this.game.turnMessage.type === 'StTurn'){
           console.log("start attacking")
-          if (this.computerFindToAttack())
+          if (this.findToAttack())
             console.log("no one to attack")
         }
       }
@@ -56,17 +57,22 @@ export default {
     },
     trigger(){
       console.log(this.trigger, "do it again!")
-      if (this.computerFindToAttack())
+      if (this.findToAttack()){
         console.log("all done attacking")
-      else
-        console.log("not done")
+        if (this.passTroops()){
+          console.log("nothing to pass. please make a defend continent function so I can run that")
+          this.computerEndTurn()
+        }
+        else {
+          console.log("done passing")
+          this.computerEndTurn()
+        }
+      }
     }
   },
+
   methods: {
-    getPlayerById(id){
-      const index = this.game.players.findIndex((e) => e.id === id)
-      return this.game.players[index]
-    },
+    //============== Initial Troops: ===========
     initialTroops(){
       let output = this.pickContinent();
       for (let i=0; i<output.length; i++){
@@ -78,7 +84,7 @@ export default {
       console.log("nowhere to place troops because every continent has enough")
     },
     distributeInitialTroops(continent) {
-      const terr = this.findEnemiesByContinent(continent);
+      const terr = this.enemyCountByContinent(continent);
       let tempReserves = this.currentPlayer.tempReserves
 
       for (let i=0; i<terr.length; i++){ //remove territories with 0 or 1 enemies
@@ -93,41 +99,41 @@ export default {
         tempReserves--
       }
     },
+
+    // ============= Add Troops: ================
     addTroops(){
       const con = this.game.turnMessage.data.conIds //contients player owns
       if (con.length > 0){ // player has at least one continent
         console.log("I have a continent. running the other code")
         let picked = this.pickContinent()
-        for (var i=0; i<con.length; i++){
-          for (var j=0; j<picked.length; j++){
+        for (let i=0; i<con.length; i++){
+          for (let j=0; j<picked.length; j++){
             if (picked[j] === con[i]){
               picked.splice(j, 1) // remove owned continents from picked
-              break
+              j--
             }
           }
         }
         let array = []
-        for (let i=0; i<con.length; i++){ //add all territories with enemies in the regions players owns to an array
-          let E = this.findEnemiesByContinent(con[i]);
-          for (var j=0; j<E.length; j++){
+        for (let k=0; k<con.length; k++){ //add all territories with enemies in the regions players owns to an array
+          let E = this.enemyCountByContinent(con[k])
+          for (let j=0; j<E.length; j++){
             if (E[j].enemies > 0)
               array.push(E[j].index)
-           }
+          }
         }
         this.distributeTroopsByIndex(array, 2) //put troops on all the territories in the array
 
         let reserves = this.currentPlayer.reserves
-        for (var i=0; reserves > 0; i++){// put troops on the territories in the other regions
-          console.log(i)
-          if (i > 25)
-            return
+        for (let i=0; reserves > 0; i++){// put troops on the territories in the other regions
           if (i >= picked.length){ // if any left, put them everywhere
+            console.log("I had some extra troops that I spread around")
             this.distributeTroopsByIndex(this.myCountriesWithEnemies(), i-picked.length+3)
           }
           else {
-            let E = this.findEnemiesByContinent(picked[i])
+            let E = this.enemyCountByContinent(picked[i])
             let array = []
-            for (var j=0; j<E.length; j++){
+            for (let j=0; j<E.length; j++){
               if (E[j].enemies > 0)
                 array.push(E[j].index)
             }
@@ -141,14 +147,14 @@ export default {
         let picked = this.pickContinent()
         for (let i=0; i<picked.length; i++){
           if (!this.checkIfContinentIsSufficiant(picked[i])){
-              this.distributeComputerTroops(picked[i])
+              this.distributeTroops(picked[i])
           }
         }
         this.withinContinent = true
       }
     },
-    distributeComputerTroops(continentId){
-      let con = this.findEnemiesByContinent(continentId)
+    distributeTroops(continentId){
+      let con = this.enemyCountByContinent(continentId)
       let reserves = this.currentPlayer.reserves
 
       for (let i=0; i<con.length; i++){ //put 1 troop on territories with one enemy
@@ -182,7 +188,7 @@ export default {
       for (let i=0, x=0; x<indexArray.length; i++){
         if (i >= indexArray.length)
           i=0, x=0;
-        if (this.enemyStrengthByCountry(indexArray[i]) > this.game.territories[indexArray[i]].reserves-num && reserves > 0){
+        if (this.enemyStrengthByTerritory(indexArray[i]) > this.game.territories[indexArray[i]].reserves-num && reserves > 0){
           this.$store.dispatch("addTroops", indexArray[i])
           reserves--
         }
@@ -190,7 +196,9 @@ export default {
           x++
       }
     },
-    computerFindToAttack(){
+
+    // =========== Attacking: =========
+    findToAttack(){
       let con = this.myCountriesWithEnemies()
       for (let i=0; i<con.length; i++){
         let bordering = gameData.territoryInfo[con[i]+1].borders
@@ -200,10 +208,6 @@ export default {
               if (this.game.territories[con[i]].reserves > 2){
                 this.computerAttack(con[i], bordering[j]-1)
                 return false
-                // if (computerAttack(myCounWithEnem[i], countryInfo[myCounWithEnem[i]].borders[j]))
-                //   return false;
-                // else
-                //   j--;
               }
             }
           }
@@ -212,41 +216,61 @@ export default {
       }
     return true
     },
-    pickContinent() {
-      let data = this.continentData()
-      let enemyFactor = []
-      let myFactor = []
 
-      for (let i=0; i<9; i++){
-        if (data.enemyTerrs[i] > 0)
-          enemyFactor[i] = 1/data.enemyTerrs[i]
+    // ============= Passing: ==============
+    passTroops(){
+      let terrs = this.enemyCountByIndexes([0,90])
+      let passers = []//HIGH values
+      for (let i=0; i<terrs.length; i++){
+        if (this.game.territories[terrs[i].index].reserves > 1 && terrs[i].enemies === 0)
+          passers.push({reserves: this.game.territories[terrs[i].index].reserves, index: terrs[i].index+1})
+      }
+      if (passers.length < 1)
+        return true
+      passers.sort((a, b) => b.reserves - a.reserves)//sort by highest reserves first
+      const withEnemies = this.myCountriesWithEnemies()//LOW values
+      let passData = []
+      for (let z=0; z<passers.length; z++){
+        const passies = gameData.checkContinuity(this.game.territories, this.currentPlayer.id, passers[z].index, [])//HIGH values
+        let passiesWithEnemies = passies.filter((x) => withEnemies.includes(x-1))
+        let sortedPassies = []
+        const distList = gameData.getDistances([[passers[z].index], []], 1)
+        for (let i=0; i<distList.length; i++){
+          for (let j=0; j<passiesWithEnemies.length; j++){
+            if (distList[i].includes(passiesWithEnemies[j]))
+              sortedPassies.push({id: passiesWithEnemies[j], dist: i})
+          }
+        }
+        let troops = this.game.territories[passers[z].index-1].reserves-1
+        if (sortedPassies[0].dist === 1)
+          passData.push({passingTerr: passers[z].index-1, recievingTerr: sortedPassies[0].id-1, troops, type: "short"})
         else
-          enemyFactor[i] = 2
+          passData.push({passingTerr: passers[z].index-1, recievingTerr: sortedPassies[0].id-1, troops, type: "long"})
       }
-      for (let i=0; i<9; i++){
-        myFactor[i] = data.myTerrs[i]/this.currentPlayer.terrCount
+      let x = 0
+      for (let i=0; i<passData.length; i++){
+        if (passData[i].type === "short" && x<3){
+          this.$store.commit("passTroops", passData[i])
+          console.log("passed "+(passData[i].passingTerr+1)+" to "+(passData[i].recievingTerr+1))
+          x++
+        }
       }
-      let show = []
-      for (let i=0; i<9; i++){
-        show[i] = myFactor[i] * enemyFactor[i]
+      if (x < 3){
+        for (let i=0; i<passData.length; i++){
+          if (passData[i].type === "long" && x<3){
+            this.$store.commit("passTroops", passData[i])
+            console.log("passed "+(passData[i].passingTerr+1)+" to "+(passData[i].recievingTerr+1))
+            x++
+          }
+        }
       }
-      show[0] *= 10
-      show[1] *= 6
-      show[2] *= 16
-      show[3] *= 4
-      show[4] *= 10
-      show[5] *= 6
-      show[6] *= 6
-      show[7] *= 22
-      show[8] *= 19
-      for (let i=0; i<9; i++){
-        if (show[i] !== 0)
-          show[i] += (data.myStrength[i]/20) - (data.enemyStrength[i]/20)
-      }
-      return this.sortIndexes(show)
+      return false
     },
-    findEnemiesByContinent(continent) {
-      let keys = this.getContinentKeys(continent)
+    // ============= Counting Enemies: ======
+    enemyCountByContinent(continent){
+      return this.enemyCountByIndexes(this.getContinentKeys(continent))
+    },
+    enemyCountByIndexes(keys) {
       let con = [], x = 0
       for (let i = keys[0]; i<keys[1]; i++) {
         if (this.game.territories[i].owner === this.currentPlayer.id){
@@ -283,15 +307,50 @@ export default {
           enemies.push(this.game.territories[bordering[i]-1].reserves)
       }
       let x=0, y=0
-      for (var i=1; i<enemies.length; i++){
+      for (let i=1; i<enemies.length; i++){
         if (enemies[i] > enemies[x])
           x = i
       }
-      for (var i=0; i<enemies.length; i++){
+      for (let i=0; i<enemies.length; i++){
         if (i !== x)
           y+= enemies[i]
       }
       return enemies[x] ? enemies[x] + (y/4) : 0
+    },
+
+    // ============= Continent Data: =========
+    pickContinent() {
+      let data = this.continentData()
+      let enemyFactor = []
+      let myFactor = []
+
+      for (let i=0; i<9; i++){
+        if (data.enemyTerrs[i] > 0)
+          enemyFactor[i] = 1/data.enemyTerrs[i]
+        else
+          enemyFactor[i] = 2
+      }
+      for (let i=0; i<9; i++){
+        myFactor[i] = data.myTerrs[i]/this.currentPlayer.terrCount
+      }
+      let show = []
+      for (let i=0; i<9; i++){
+        show[i] = myFactor[i] * enemyFactor[i]
+      }
+      show[0] *= 10
+      show[1] *= 6
+      show[2] *= 16
+      show[3] *= 4
+      show[4] *= 10
+      show[5] *= 6
+      show[6] *= 6
+      show[7] *= 22
+      show[8] *= 19
+      for (let i=0; i<9; i++){
+        if (show[i] !== 0)
+          show[i] += (data.myStrength[i]/20) - (data.enemyStrength[i]/20)
+      }
+      return this.sortIndexes(show)
     },
     continentData(){
       let myStrength = new Array(9).fill(0)
@@ -329,8 +388,6 @@ export default {
       }
       return {myStrength, enemyStrength, myTerrs, enemyTerrs}
     },
-
-    // ===== general checkers: =========
     checkIfContinentIsSufficiant(continent){
       let keys = this.getContinentKeys(continent)
       let myStrength = 0
@@ -343,7 +400,9 @@ export default {
       }
       return myStrength > (enemyStrength * 1.5)+5
     },
-    getContinentKeys(continent) {//LOW values
+
+    // ===== Helper Functions: =========
+    getContinentKeys(continent) {
       switch(continent){
         case 0:
           return [0, 14]
@@ -414,6 +473,6 @@ export default {
       }
       return output
     }
-  }//end of methods
+  }
 }
 </script>

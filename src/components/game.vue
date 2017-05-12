@@ -12,7 +12,7 @@
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase" :terr="selected"></app-footer>
-    <AIplayer :computerAttack="computerAttack" :trigger="aiTrigger"></AIplayer>
+    <AIplayer :computerAttack="computerAttack" :computerEndTurn="computerEndTurn" :trigger="aiTrigger"></AIplayer>
   </div>
 </template>
 
@@ -415,6 +415,10 @@ export default {
       }
       else
         this.openPopup("callback", "small", "No card was drawn because no territories were taken!", '', () => this.endTurn())
+    },
+    computerEndTurn(){
+      this.drawCard()
+      this.endTurn()
     },
     checkCards(){
       if (this.currentPlayer.mustTurnInCards){
