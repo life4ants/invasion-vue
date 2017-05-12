@@ -12,7 +12,7 @@
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase" :terr="selected"></app-footer>
-    <AIplayer :openPopup="openPopup"></AIplayer>
+    <AIplayer :computerAttack="computerAttack" :trigger="aiTrigger"></AIplayer>
   </div>
 </template>
 
@@ -46,7 +46,8 @@ export default {
       alert: {show: false},
       attack: {},
       passData: {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null},
-      selected: 0
+      selected: 0,
+      aiTrigger: 0
     }
   },
   mounted(){
@@ -258,6 +259,16 @@ export default {
           this.openPopup('alert', 'small-center','Those territories do not border!')
       }
     },
+    computerAttack(attackId, defendId){
+      this.select(attackId+1)
+      this.select(defendId+1)
+      const attackTerr = this.game.territories[attackId]
+      const defendTerr = this.game.territories[defendId]
+      this.attack = {attackTerr, defendTerr}
+      let redDice = attackTerr.reserves > 3 ? 3
+                    : attackTerr.reserves > 2 ? 2 : 1
+      this.pickDice2(redDice)
+    },
     pickDice1(){
       if (this.attack.attackTerr.reserves > 2){
         const threeDice = this.attack.attackTerr.reserves > 3 ? true : false
@@ -297,10 +308,22 @@ export default {
       const content = this.currentPlayer.name + ", you lost "+redLose+". "+this.getPlayerById(this.attack.defendTerr.owner).name+" lost "+whiteLose+"."
       sounds.playAttack3()
       this.$store.dispatch("attack", losses).then((conquered) => {
-        if (conquered)
-          this.openPopup('callback', 'small-center', content, '', () => this.conquerTerritory(losses.attackTerr.id, redDice))
-        else
-          this.openPopup('callback', 'small-center', content, '', () => this.closeAttack())
+        if (this.currentPlayer.isBot){
+          if (conquered){
+            this.moveTroops(this.game.territories[losses.attackTerr.id-1].reserves-1)
+            this.aiTrigger--
+          }
+          else {
+            this.closeAttack()
+            this.aiTrigger++
+          }
+        }
+        else {
+          if (conquered)
+            this.openPopup('callback', 'small-center', content, '', () => this.conquerTerritory(losses.attackTerr.id, redDice))
+          else
+            this.openPopup('callback', 'small-center', content, '', () => this.closeAttack())
+        }
       })
     },
     cancelAttack(){

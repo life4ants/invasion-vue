@@ -234,22 +234,31 @@ var territoryInfo = [
     else
       countryPoints = 3;
 
-    const continents = this.reservesFromContinents(game.territories, game.turnIndex)
-    return {countryPoints, conPoints: continents.reserves, messages: continents.show}
+    const continents = this.reservesFromContinents(game.territories, player.id)
+    return {countryPoints, conPoints: continents.reserves, messages: continents.messages, conIds: continents.conIds}
   },
 
-  reservesFromContinents(territories, turnIndex){
-    const continents = this.checkForContinent(territories, turnIndex)
-    var output = {"reserves": 0, "show": []}
-    if (continents[0]){ output.show.push("8 troops for owning Canada"); output.reserves += 8 }
-    if (continents[1]){ output.show.push("7 troops for owning Northeastern US"); output.reserves += 7 }
-    if (continents[2]){ output.show.push("4 troops for owning Southeastern US"); output.reserves += 4 }
-    if (continents[3]){ output.show.push("9 troops for owning Central US"); output.reserves += 9 }
-    if (continents[4]){ output.show.push("5 troops for owning Western US"); output.reserves += 5 }
-    if (continents[5]){ output.show.push("7 troops for owning Northern Mexico"); output.reserves += 7 }
-    if (continents[6]){ output.show.push("7 troops for owning Southern Mexico"); output.reserves += 7 }
-    if (continents[7]){ output.show.push("3 troops for owning Central America"); output.reserves += 3 }
-    if (continents[8]){ output.show.push("2 troops for owning the Caribbean"); output.reserves += 2 }
+  reservesFromContinents(territories, id){
+    const continents = this.checkForContinent(territories, id)
+    let output = {"reserves": 0, "messages": [], conIds: []}
+    const reserves = [8,7,4,9,5,7,7,3,2]
+    const messages = [
+      "8 troops for owning Canada",
+      "7 troops for owning Northeastern US",
+      "4 troops for owning Southeastern US",
+      "9 troops for owning Central US",
+      "5 troops for owning Western US",
+      "7 troops for owning Northern Mexico",
+      "7 troops for owning Southern Mexico",
+      "3 troops for owning Central America",
+      "2 troops for owning the Caribbean"]
+    for (let i=0; i<9; i++){
+      if (continents[i]){
+        output.reserves += reserves[i]
+        output.messages.push(messages[i])
+        output.conIds.push(i)
+      }
+    }
     return output
   },
 

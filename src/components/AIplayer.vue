@@ -6,7 +6,12 @@ import gameData from "./game_data.js"
 
 export default {
   name: 'AIplayer',
-  props: [ 'openPopup' ],
+  props: [ 'computerAttack', 'trigger'],
+  data(){
+    return {
+      withinContinent: false
+    }
+  },
   mounted(){
     window.ai = this
   },
@@ -16,6 +21,9 @@ export default {
     },
     currentPlayer(){
       return this.game.players[this.game.turnIndex]
+    },
+    turnMessage(){
+      return this.game.turnMessage
     }
   },
   watch: {
@@ -25,7 +33,33 @@ export default {
           console.log(this.currentPlayer.name+" placed initialTroops")
           this.initialTroops()
         }
+        else if (this.game.phase === "addTroops"){
+          console.log(this.currentPlayer.name+" added troops")
+          this.addTroops()
+        }
+        else {
+          console.log(this.game.phase)
+          console.log(this.currentPlayer.name)
+        }
       }
+    },
+    turnMessage(){
+      if (this.currentPlayer.isBot){
+        if (this.game.turnMessage.type === 'StTurn'){
+          console.log("start attacking")
+          if (this.computerFindToAttack())
+            console.log("no one to attack")
+        }
+      }
+      else
+        console.log("AIs are spying on you!")
+    },
+    trigger(){
+      console.log(this.trigger, "do it again!")
+      if (this.computerFindToAttack())
+        console.log("all done attacking")
+      else
+        console.log("not done")
     }
   },
   methods: {
@@ -41,6 +75,7 @@ export default {
           return
         }
       }
+      console.log("nowhere to place troops because every continent has enough")
     },
     distributeInitialTroops(continent) {
       const terr = this.findEnemiesByContinent(continent);
@@ -52,18 +87,130 @@ export default {
           i--
         }
       }
-      let y = 0
-      for (let i=1; i<terr.length; i++){ //find first territory with less troops than the first one
-        if (this.game.territories[terr[i].index].reserves < this.game.territories[terr[0].index].reserves) {
-          y = i
-          break
-        }
-      }
-      for (let i=y; tempReserves>0; i++){
+      for (let i=this.findFirstLowTerr(terr); tempReserves>0; i++){
         i = i >= terr.length ? 0 : i
         this.$store.dispatch("initialTroops", terr[i].index)
         tempReserves--
       }
+    },
+    addTroops(){
+      const con = this.game.turnMessage.data.conIds //contients player owns
+      if (con.length > 0){ // player has at least one continent
+        console.log("I have a continent. running the other code")
+        let picked = this.pickContinent()
+        for (var i=0; i<con.length; i++){
+          for (var j=0; j<picked.length; j++){
+            if (picked[j] === con[i]){
+              picked.splice(j, 1) // remove owned continents from picked
+              break
+            }
+          }
+        }
+        let array = []
+        for (let i=0; i<con.length; i++){ //add all territories with enemies in the regions players owns to an array
+          let E = this.findEnemiesByContinent(con[i]);
+          for (var j=0; j<E.length; j++){
+            if (E[j].enemies > 0)
+              array.push(E[j].index)
+           }
+        }
+        this.distributeTroopsByIndex(array, 2) //put troops on all the territories in the array
+
+        let reserves = this.currentPlayer.reserves
+        for (var i=0; reserves > 0; i++){// put troops on the territories in the other regions
+          console.log(i)
+          if (i > 25)
+            return
+          if (i >= picked.length){ // if any left, put them everywhere
+            this.distributeTroopsByIndex(this.myCountriesWithEnemies(), i-picked.length+3)
+          }
+          else {
+            let E = this.findEnemiesByContinent(picked[i])
+            let array = []
+            for (var j=0; j<E.length; j++){
+              if (E[j].enemies > 0)
+                array.push(E[j].index)
+            }
+            this.distributeTroopsByIndex(array, 2)
+          }
+          reserves = this.currentPlayer.reserves
+        }
+        this.withinContinent = false
+      }
+      else {
+        let picked = this.pickContinent()
+        for (let i=0; i<picked.length; i++){
+          if (!this.checkIfContinentIsSufficiant(picked[i])){
+              this.distributeComputerTroops(picked[i])
+          }
+        }
+        this.withinContinent = true
+      }
+    },
+    distributeComputerTroops(continentId){
+      let con = this.findEnemiesByContinent(continentId)
+      let reserves = this.currentPlayer.reserves
+
+      for (let i=0; i<con.length; i++){ //put 1 troop on territories with one enemy
+        if (con[i].enemies === 1){
+          if (this.game.territories[con[i].index] < 3 && reserves > 0){
+            reserves--
+            this.$store.dispatch("addTroops", con[i].index)
+          }
+          con.splice(i, 1) //then remove them
+          i--
+        }
+        else if (con[i].enemies === 0){ //also remove territories with no enemies
+          con.splice(i, 1);
+          i--
+        }
+      }
+      for (let i = this.findFirstLowTerr(con); reserves>0; i++){
+        if (i >= con.length){
+          if (this.checkIfContinentIsSufficiant(continentId)){
+            return
+          }
+          else
+            i=0
+        }
+        this.$store.dispatch("addTroops", con[i].index)
+        reserves--
+      }
+    },
+    distributeTroopsByIndex(indexArray, num){
+      let reserves = this.currentPlayer.reserves
+      for (let i=0, x=0; x<indexArray.length; i++){
+        if (i >= indexArray.length)
+          i=0, x=0;
+        if (this.enemyStrengthByCountry(indexArray[i]) > this.game.territories[indexArray[i]].reserves-num && reserves > 0){
+          this.$store.dispatch("addTroops", indexArray[i])
+          reserves--
+        }
+        else
+          x++
+      }
+    },
+    computerFindToAttack(){
+      let con = this.myCountriesWithEnemies()
+      for (let i=0; i<con.length; i++){
+        let bordering = gameData.territoryInfo[con[i]+1].borders
+        for (let j=0; j<bordering.length; j++){
+          if (this.game.territories[bordering[j]-1].owner !== this.currentPlayer.id){
+            if (this.withinContinent && this.inSameContinent(con[i], bordering[j]-1) || !this.withinContinent){
+              if (this.game.territories[con[i]].reserves > 2){
+                this.computerAttack(con[i], bordering[j]-1)
+                return false
+                // if (computerAttack(myCounWithEnem[i], countryInfo[myCounWithEnem[i]].borders[j]))
+                //   return false;
+                // else
+                //   j--;
+              }
+            }
+          }
+        }
+
+      }
+    return true
     },
     pickContinent() {
       let data = this.continentData()
@@ -112,6 +259,39 @@ export default {
         }
       }
       return con
+    },
+    myCountriesWithEnemies(){
+      let output = []
+      for (let i=0; i<90; i++){
+        if (this.game.territories[i].owner === this.currentPlayer.id){
+          let bordering = gameData.territoryInfo[i+1].borders
+          for (let j=0; j<bordering.length; j++){
+            if (this.game.territories[bordering[j]-1].owner != this.currentPlayer.id){
+              output.push(i)
+              break
+            }
+          }
+        }
+      }
+      return output
+    },
+    enemyStrengthByTerritory(terr){
+      let bordering = gameData.territoryInfo[terr+1].borders
+      let enemies = []
+      for (let i=0; i<bordering.length; i++){
+        if (this.game.territories[terr].owner !== this.currentPlayer.id)
+          enemies.push(this.game.territories[bordering[i]-1].reserves)
+      }
+      let x=0, y=0
+      for (var i=1; i<enemies.length; i++){
+        if (enemies[i] > enemies[x])
+          x = i
+      }
+      for (var i=0; i<enemies.length; i++){
+        if (i !== x)
+          y+= enemies[i]
+      }
+      return enemies[x] ? enemies[x] + (y/4) : 0
     },
     continentData(){
       let myStrength = new Array(9).fill(0)
@@ -223,6 +403,16 @@ export default {
         }
       }
       return output;
+    },
+    findFirstLowTerr(terrsArray){//finds the first territory with less troops than the first one
+      let output = 0
+      for (let i=1; i<terrsArray.length; i++){
+        if (this.game.territories[terrsArray[i].index].reserves < this.game.territories[terrsArray[0].index].reserves) {
+          output = i
+          break
+        }
+      }
+      return output
     }
   }//end of methods
 }
