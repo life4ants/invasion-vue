@@ -6,7 +6,7 @@
     <div :id="'label'+ id" class='T-label'>
       {{reserves}}
     </div>
-    <div class="terrId">{{id}}</div>
+    <!-- <div class="terrId">{{id}}</div> -->
   </div>
 </template>
 

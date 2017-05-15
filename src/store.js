@@ -48,6 +48,8 @@ export default new Vuex.Store({
       let winner = state.game.players[state.game.turnIndex]
       let loser = state.game.players[id]
       winner.cards = winner.cards.concat(loser.cards)
+      if (winner.cards.length >= state.game.settings.numOfCards)
+        winner.mustTurnInCards = true
       state.game.players.splice(id, 1)
       if (state.game.players.length === 1){
         state.game.gameOver = true
@@ -80,7 +82,9 @@ export default new Vuex.Store({
       if (state.game.nextCard > 94)
         state.game.nextCard = 0
     },
-
+    cardCheater(state, id){
+      state.game.players[state.game.turnIndex].cards.push(id)
+    },
     //============== General Setters: ==============
     setPhase(state, phase){
       state.game.phase = phase
@@ -104,7 +108,8 @@ export default new Vuex.Store({
       state.game.turnMessage = {type: 'Trps', data: pl}
     },
     changeName(state, pl){
-      state.game.players[pl.id].name = pl.name
+      const index = state.game.players.findIndex((e) => e.id === pl.id)
+      state.game.players[index].name = pl.name
     },
     setAutoroll(state, pl){
       const index = state.game.players.findIndex((e) => e.id === pl.id)
@@ -149,7 +154,7 @@ export default new Vuex.Store({
           game.players[i].isBot = false
         }
         game.version = 8
-        alert("upgrading to version 8")
+        console.log("upgrading to version 8")
       }
       if (game.version === 8){
         for (let i=0; i<game.players.length; i++){
@@ -249,8 +254,8 @@ export default new Vuex.Store({
       commit("upCardSetValue")
       state.game.setsTurnedIn++
       for (let i=cards.length-1; i>=0; i--){
-        let terr = state.game.territories[pl.values[i]]
-        if (terr.owner === state.game.turnIndex){
+        let terr = state.game.territories[pl.values[i]] || {owner: 'wild'} // if the card is a wild
+        if (terr.owner === player.id){
           output.ids.push(terr.id)
           output.total +=2
           commit("add2TroopsTo", terr.id-1)

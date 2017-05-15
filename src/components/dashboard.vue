@@ -7,8 +7,7 @@
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     </div>
     <h1>Welcome to Invasion!</h1>
-    <p>Welcome Chingus! :) This is a game based on Risk. It is still in beta, you could say, but it is fully playable.</p>
-    <p>Feel free to give feedback on anything - button colors, overall look, sound volume, anything!</p>
+    <p>This is a game based on Risk.</p>
     <button @click='start' class="btn btn-primary">Start New Game</button>
     <h3>Saved Games:</h3>
     <ul v-if="edit">

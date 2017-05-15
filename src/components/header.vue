@@ -8,7 +8,7 @@
           </span>
           <input type="range" id="volumeSlider" v-model.number="volume">
         </div>
-        <div v-else>
+        <div class="musicIcon" v-else>
           <span class="fa-stack fa-lg" @click="setMusic">
             <i class="fa fa-music fa-stack-1x"></i>
             <i class="fa fa-ban fa-stack-2x"></i>
@@ -31,11 +31,13 @@
             <li><a class='btn-default' @click="menu('SMC')">See my Cards</a></li>
             <li><a class='btn-default' @click="menu('Set')">My Settings</a></li>
             <li><a class='btn-default' @click="menu('PI')">Players Info</a></li>
-            <li><a class='btn-default' @click="menu()">give me a card</a></li>
+            <li><a class='btn-default' @click="menu('AIS')">Change AI Speed</a></li>
           </ul>
         </div>
         <div>
-          <button class="btn btn-success" :disabled="phase === 'initialTroops'"
+          <button v-if="player.isBot && paused" class="btn btn-success" id="endTurnButton" @click="menu('PAI')">Resume AI</button>
+          <button v-else-if="player.isBot && !paused" class="btn btn-success" id="endTurnButton" @click="menu('PAI')">Pause AI</button>
+          <button v-else class="btn btn-success" :disabled="phase === 'initialTroops'"
                         id="endTurnButton" @click="menu('ET')">End Turn</button>
         </div>
       </div>
@@ -64,7 +66,7 @@ export default {
     icon
   },
   props: [
-    'phase', 'player', 'alert', 'round', 'attackLine', 'canCancel', 'menu', 'canTurnInCards'
+    'phase', 'player', 'alert', 'round', 'attackLine', 'canCancel', 'menu', 'canTurnInCards', 'paused'
   ],
   data(){
     return {
@@ -168,8 +170,11 @@ export default {
     pointer-events: none;
   }
   #volumeSlider {
-    width: 50px;
+    width: 45px;
     margin-top: 5px;
+ }
+ .musicIcon{
+    width: 45px;
  }
  .line{
     font-size: 11px;

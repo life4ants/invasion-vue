@@ -683,6 +683,10 @@
        id="path5401"
        d="m 1177.5904,443.2213 -8.0756,22.2078 0,0"
        class="connector-line" />
+    <path
+      id="path4305"
+      d="m 875.5633,1186.5802 7.98308,6.6955"
+      class="connector-line" />
   </g>
   <g
      id="g4946"

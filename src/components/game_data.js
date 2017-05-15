@@ -224,7 +224,7 @@ var territoryInfo = [
 
   getReserves(game){
     const player = game.players[game.turnIndex]
-    var countryPoints = 0
+    let countryPoints = 0
     if (player.terrCount > 11) {
       if (game.round === 1)
         countryPoints = Math.floor(player.terrCount / 4)
@@ -263,29 +263,29 @@ var territoryInfo = [
   },
 
   checkForContinent(territories, id){
-    var continents = []
-    for (var i=0; i<9; i++){ continents[i] = true }
+    let continents = []
+    for (let i=0; i<9; i++){ continents[i] = true }
 
-    for (var i=0;  i<14; i++){if (territories[i].owner != id){continents[0] = false; break } }
-    for (var i=14; i<26; i++){if (territories[i].owner != id){continents[1] = false; break } }
-    for (var i=26; i<33; i++){if (territories[i].owner != id){continents[2] = false; break } }
-    for (var i=33; i<48; i++){if (territories[i].owner != id){continents[3] = false; break } }
-    for (var i=48; i<55; i++){if (territories[i].owner != id){continents[4] = false; break } }
-    for (var i=55; i<67; i++){if (territories[i].owner != id){continents[5] = false; break } }
-    for (var i=67; i<78; i++){if (territories[i].owner != id){continents[6] = false; break } }
-    for (var i=78; i<85; i++){if (territories[i].owner != id){continents[7] = false; break } }
-    for (var i=85; i<90; i++){if (territories[i].owner != id){continents[8] = false; break } }
+    for (let i=0;  i<14; i++){if (territories[i].owner != id){continents[0] = false; break } }
+    for (let i=14; i<26; i++){if (territories[i].owner != id){continents[1] = false; break } }
+    for (let i=26; i<33; i++){if (territories[i].owner != id){continents[2] = false; break } }
+    for (let i=33; i<48; i++){if (territories[i].owner != id){continents[3] = false; break } }
+    for (let i=48; i<55; i++){if (territories[i].owner != id){continents[4] = false; break } }
+    for (let i=55; i<67; i++){if (territories[i].owner != id){continents[5] = false; break } }
+    for (let i=67; i<78; i++){if (territories[i].owner != id){continents[6] = false; break } }
+    for (let i=78; i<85; i++){if (territories[i].owner != id){continents[7] = false; break } }
+    for (let i=85; i<90; i++){if (territories[i].owner != id){continents[8] = false; break } }
     return continents
   },
 
   runAttack(R, W, defenseWinsTie){
-    var diceW = [Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1)];
-    var diceR = [Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1)];
-    var white_high, white_low;
-    var red_high, red_low;
-    var whiteLose = 0;
-    var redLose = 0;
-    var tie = 0;
+    let diceW = [Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1)];
+    let diceR = [Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1), Math.floor(Math.random() * (6)+1)];
+    let white_high, white_low;
+    let red_high, red_low;
+    let whiteLose = 0;
+    let redLose = 0;
+    let tie = 0;
     // console.log("defenseWinsTie is:", defenseWinsTie)
 
     if (W === 2){
@@ -384,22 +384,103 @@ var territoryInfo = [
   checkSetOfCards(cards){
     if (cards.length < 3)
       return false
-    var man = 0, horse = 0, cannon = 0;
-    for (var i = 0; i<cards.length; i++){
-      if (this.cards[cards[i]].case === 3)
-        return true // if one is a wild, we have a match
-      else if (this.cards[cards[i]].case === 0)
-        man++
-      else if (this.cards[cards[i]].case === 1)
-        horse++
-      else if (this.cards[cards[i]].case === 2)
-        cannon++
+    if (cards.length >= 5)
+      return true
+    let man = 0, horse = 0, cannon = 0;
+    for (let i = 0; i<cards.length; i++){
+      switch(this.cards[cards[i]].case){
+        case 0:
+          man++
+          break
+        case 1:
+          horse++
+          break
+        case 2:
+          cannon++
+          break
+        case 3:
+          return true // if one is a wild, we have a match
+      }
     }
     if ((cannon >= 3 || man >= 3 || horse >= 3) || (cannon >= 1 && man >= 1 && horse >= 1))
         return true
     else
         return false
   },
+  findSetOfCards(cards){
+    let cardValues = cards.map((val) => this.cards[val].case)
+    let man = 0, horse = 0, cannon = 0
+
+    for (let i=0; i<cardValues.length; i++){
+      switch(cardValues[i]){
+        case 0:
+          man++
+          break
+        case 1:
+          horse++
+          break
+        case 2:
+          cannon++
+      }
+    }
+    if (man >= 3)
+      return this.pick3ofAKind(cardValues, 0)
+    else if (horse >= 3)
+      return this.pick3ofAKind(cardValues, 1)
+    else if (cannon >= 3)
+      return this.pick3ofAKind(cardValues, 2)
+    else if ((cannon >= 1 && man >= 1 && horse >= 1))
+      return this.pick1ofEachKind(cardValues)
+    else
+      return this.pickWildand2Others(cardValues)
+  },
+  pickWildand2Others(values){
+    let output = [null]
+    let x=0
+    for (let i=0; i<values.length; i++){
+      if (values[i] === 3 && output[0] === null)
+        output[0] = i++
+      if (x<2){
+        output.push(i)
+        x++
+      }
+    }
+    return output
+  },
+  pick1ofEachKind(values){
+    let output = []
+    for (let i=0; i<values.length; i++){
+      if (values[i] < 3)
+        output[values[i]] = i
+    }
+    return output
+  },
+  pick3ofAKind(values, kind){
+    let output = []
+    let x = 0
+    for (let i=0; x<3; i++){
+      if (i > values.length)
+        return console.error("less than 3 cards of one type!")
+      if (values[i] === kind){
+        output[x] = i
+        x++
+      }
+    }
+    return output
+  },
+  // checkContinuityEx(territories, owner, startTerr, list, distances, dist){
+  //   list.push(startTerr)
+  //   distances.push(dist)
+  //   for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
+  //     let id = this.territoryInfo[startTerr].borders[i]
+  //     if (territories[id-1].owner === owner && !list.includes(id)){
+  //       let data = this.checkContinuityEx(territories, owner, id, list, distances, dist+1)
+  //       list.concat(data.list)
+  //       distances.concat(data.distances)
+  //     }
+  //   }
+  //   return {list, distances}
+  // },
   checkContinuity(territories, owner, startTerr, list){
     list.push(startTerr)
     for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
@@ -409,19 +490,6 @@ var territoryInfo = [
       }
     }
     return list
-  },
-  checkContinuityEx(territories, owner, startTerr, list, distances, dist){
-    list.push(startTerr)
-    distances.push(dist)
-    for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
-      let id = this.territoryInfo[startTerr].borders[i]
-      if (territories[id-1].owner === owner && !list.includes(id)){
-        let data = this.checkContinuityEx(territories, owner, id, list, distances, dist+1)
-        list.concat(data.list)
-        distances.concat(data.distances)
-      }
-    }
-    return {list, distances}
   },
   getDistances(list, dist){// [[44], []], 1
     for (let i=0; i<list[dist-1].length; i++){
@@ -442,16 +510,16 @@ var territoryInfo = [
       return this.getDistances(list, dist+1)
     }
 
-  },
-  unique(a){
-    for(let i=0; i<a.length; ++i) {
-      for (let j=i+1; j<a.length; ++j) {
-        if(a[i] === a[j])
-          a.splice(j--, 1);
-      }
-    }
-    return a
   }
+  // unique(a){
+  //   for(let i=0; i<a.length; ++i) {
+  //     for (let j=i+1; j<a.length; ++j) {
+  //       if(a[i] === a[j])
+  //         a.splice(j--, 1);
+  //     }
+  //   }
+  //   return a
+  // }
 }
 
 export default gameData
@@ -460,17 +528,17 @@ window.test = function(x){
     console.log("please give a 1 or 2 as an argument")
     return
   }
-  for (var k=2; k<9; k++){
-    var players = []
-    for (var i=0; i<k; i++){
+  for (let k=2; k<9; k++){
+    let players = []
+    for (let i=0; i<k; i++){
       players.push({reserves: 0, tempReserves: 0, terrCount: 0})
     }
-    var data = gameData.setUpGame(players)
+    let data = gameData.setUpGame(players)
     if (x === 1)
       console.log(JSON.stringify(data.players, null, 2))
     else {
       console.log(k+" players:")
-      for (var i=0; i<data.players.length; i++){
+      for (let i=0; i<data.players.length; i++){
         console.log('\nplayer '+i+":")
         console.log("territories: "+data.players[i].terrCount)
         console.log('reserves: '+data.players[i].reserves)
@@ -520,10 +588,4 @@ window.testReserves = (turnIndex) => {
   }
   console.log(game.players[turnIndex])
   console.log(gameData.getReserves(game))
-}
-window.testDist = (id) => gameData.getDistances([[id], []], 1)
-window.selectIds = (ids) => {
-  for (let i=0; i<ids.length; i++){
-    $('.territory'+ids[i]).addClass('selected')
-  }
 }

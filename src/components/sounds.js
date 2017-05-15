@@ -21,7 +21,10 @@ export default {
         this.troops2.pause()
         this.troops2.currentTime = 0
       }
-      this.troops1.play()
+      this.troops1.play().catch((e) => {
+        console.log("reloading troops1 sound")
+        this.troops1.load()
+      })
       this.isOdd = false
     }
     else {
@@ -29,7 +32,10 @@ export default {
         this.troops1.pause()
         this.troops1.currentTime = 0
       }
-      this.troops2.play()
+      this.troops2.play().catch((e) => {
+        console.log("reloading troops2 sound")
+        this.troops2.load()
+      })
       this.isOdd = true
     }
   },
@@ -42,14 +48,20 @@ export default {
       this.troops1.pause()
       this.troops1.currentTime = 0
     }
-    this.startTurn.play()
+    this.startTurn.play().catch((e) => {
+      console.log("reloading startTurn sound")
+      this.startTurn.load()
+    })
   },
   playAttack3(){
     if (!this.attack2.paused){
       this.attack2.pause()
       this.attack2.currentTime = 0
     }
-    this.attack3.play()
+    this.attack3.play().catch((e) => {
+      console.log("reloading attack3 sound")
+      this.attack3.load()
+    })
   },
   playGameOver(){
     if (!this.backgroundMusic.paused)

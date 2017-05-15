@@ -6,14 +6,21 @@ import gameData from "./game_data.js"
 
 export default {
   name: 'AIplayer',
-  props: [ 'computerAttack', 'computerEndTurn', 'trigger'],
+  props: [ 'computerAttack', 'computerEndTurn', 'trigger', 'paused'],
   data(){
     return {
-      withinContinent: false
+      withinContinent: false,
+      attackCount: 0
     }
   },
   mounted(){
     window.ai = this
+    if (this.currentPlayer.isBot){
+      if (this.game.phase === "initialTroops")
+        this.initialTroops()
+      else if (this.game.phase === "attack1")
+        this.attack()
+    }
   },
   computed: {
     game(){
@@ -30,48 +37,59 @@ export default {
   watch: {
     currentPlayer(){
       if (this.currentPlayer.isBot){
+        // console.log(this.currentPlayer.name+"\'s turn")
         if (this.game.phase === "initialTroops"){
-          console.log(this.currentPlayer.name+" placed initialTroops")
-          this.initialTroops()
+          setTimeout(() => this.initialTroops(), 100)
         }
-        else if (this.game.phase === "addTroops"){
-          console.log(this.currentPlayer.name+" added troops")
-          this.addTroops()
-        }
-        else {
-          console.log(this.game.phase)
-          console.log(this.currentPlayer.name)
+        else if (this.game.phase === "addTroops" && this.game.turnMessage.type === "Trps"){
+          this.attackCount = 0
+          if (!this.turnInCards())
+            this.addTroops(this.game.turnMessage.data.conIds)
         }
       }
     },
     turnMessage(){
       if (this.currentPlayer.isBot){
         if (this.game.turnMessage.type === 'StTurn'){
-          console.log("start attacking")
-          if (this.findToAttack())
-            console.log("no one to attack")
+          if (this.findToAttack()){
+            // console.error("no one to attack")
+            this.endTurn()
+          }
+        }
+        else if (this.game.turnMessage.type === "Cards"){
+          let contients = gameData.checkForContinent(this.game.territories, this.currentPlayer.id)
+          let conIds = []
+          contients.forEach((el,id) => {
+            if (el)
+              conIds.push(id)
+          })
+          this.addTroops(conIds)
         }
       }
-      else
-        console.log("AIs are spying on you!")
     },
     trigger(){
-      console.log(this.trigger, "do it again!")
-      if (this.findToAttack()){
-        console.log("all done attacking")
-        if (this.passTroops()){
-          console.log("nothing to pass. please make a defend continent function so I can run that")
-          this.computerEndTurn()
-        }
-        else {
-          console.log("done passing")
-          this.computerEndTurn()
-        }
+      if (!this.paused){
+        this.attack()
       }
     }
   },
 
   methods: {
+    endTurn(){
+      if (this.passTroops()){
+        let contients = gameData.checkForContinent(this.game.territories, this.currentPlayer.id)
+        let conIds = []
+        contients.forEach((el,id) => {
+          if (el)
+            conIds.push(id)
+          })
+        // console.log("Nothing to pass. I have "+conIds.length+" continents")
+        this.computerEndTurn()
+      }
+      else {
+        this.computerEndTurn()
+      }
+    },
     //============== Initial Troops: ===========
     initialTroops(){
       let output = this.pickContinent();
@@ -81,7 +99,7 @@ export default {
           return
         }
       }
-      console.log("nowhere to place troops because every continent has enough")
+      console.error("nowhere to place troops because every continent has enough")
     },
     distributeInitialTroops(continent) {
       const terr = this.enemyCountByContinent(continent);
@@ -101,34 +119,34 @@ export default {
     },
 
     // ============= Add Troops: ================
-    addTroops(){
-      const con = this.game.turnMessage.data.conIds //contients player owns
-      if (con.length > 0){ // player has at least one continent
-        console.log("I have a continent. running the other code")
+    addTroops(continent){
+      // console.log("adding troops")
+      let reserves = this.currentPlayer.reserves
+      if (continent.length > 0){ // player has at least one continent
         let picked = this.pickContinent()
-        for (let i=0; i<con.length; i++){
+        for (let i=0; i<continent.length; i++){
           for (let j=0; j<picked.length; j++){
-            if (picked[j] === con[i]){
+            if (picked[j] === continent[i]){
               picked.splice(j, 1) // remove owned continents from picked
               j--
             }
           }
         }
         let array = []
-        for (let k=0; k<con.length; k++){ //add all territories with enemies in the regions players owns to an array
-          let E = this.enemyCountByContinent(con[k])
+        for (let k=0; k<continent.length; k++){ //add all territories with enemies in the regions players owns to an array
+          let E = this.enemyCountByContinent(continent[k])
           for (let j=0; j<E.length; j++){
             if (E[j].enemies > 0)
               array.push(E[j].index)
           }
         }
-        this.distributeTroopsByIndex(array, 2) //put troops on all the territories in the array
 
-        let reserves = this.currentPlayer.reserves
+        reserves = this.distributeTroopsByIndex(reserves, array, 2) //put troops on all the territories in the array:
+
         for (let i=0; reserves > 0; i++){// put troops on the territories in the other regions
           if (i >= picked.length){ // if any left, put them everywhere
-            console.log("I had some extra troops that I spread around")
-            this.distributeTroopsByIndex(this.myCountriesWithEnemies(), i-picked.length+3)
+            // console.log("I had some extra troops that I spread around")
+            reserves = this.distributeTroopsByIndex(reserves, this.myCountriesWithEnemies(), i-picked.length+3)
           }
           else {
             let E = this.enemyCountByContinent(picked[i])
@@ -137,9 +155,8 @@ export default {
               if (E[j].enemies > 0)
                 array.push(E[j].index)
             }
-            this.distributeTroopsByIndex(array, 2)
+            reserves = this.distributeTroopsByIndex(reserves, array, 2)
           }
-          reserves = this.currentPlayer.reserves
         }
         this.withinContinent = false
       }
@@ -147,16 +164,17 @@ export default {
         let picked = this.pickContinent()
         for (let i=0; i<picked.length; i++){
           if (!this.checkIfContinentIsSufficiant(picked[i])){
-              this.distributeTroops(picked[i])
+              reserves = this.distributeTroopsByContient(reserves, picked[i])
           }
         }
-        this.withinContinent = true
+        this.withinContinent = reserves > 0 ? false : true
+        for (let i = 1; reserves > 0; i++){
+          reserves = this.distributeTroopsByIndex(reserves, this.myCountriesWithEnemies(), i)
+        }
       }
     },
-    distributeTroops(continentId){
+    distributeTroopsByContient(reserves, continentId){
       let con = this.enemyCountByContinent(continentId)
-      let reserves = this.currentPlayer.reserves
-
       for (let i=0; i<con.length; i++){ //put 1 troop on territories with one enemy
         if (con[i].enemies === 1){
           if (this.game.territories[con[i].index] < 3 && reserves > 0){
@@ -174,7 +192,7 @@ export default {
       for (let i = this.findFirstLowTerr(con); reserves>0; i++){
         if (i >= con.length){
           if (this.checkIfContinentIsSufficiant(continentId)){
-            return
+            return reserves
           }
           else
             i=0
@@ -182,9 +200,9 @@ export default {
         this.$store.dispatch("addTroops", con[i].index)
         reserves--
       }
+      return reserves
     },
-    distributeTroopsByIndex(indexArray, num){
-      let reserves = this.currentPlayer.reserves
+    distributeTroopsByIndex(reserves, indexArray, num){
       for (let i=0, x=0; x<indexArray.length; i++){
         if (i >= indexArray.length)
           i=0, x=0;
@@ -195,9 +213,21 @@ export default {
         else
           x++
       }
+      return reserves
     },
 
     // =========== Attacking: =========
+    attack(){
+      this.attackCount++
+      if (this.game.canTurnInCards){
+        if (this.turnInCards())
+          return
+      }
+     if (this.findToAttack()){
+        // console.log("attacked "+this.attackCount+" times")
+        this.endTurn()
+      }
+    },
     findToAttack(){
       let con = this.myCountriesWithEnemies()
       for (let i=0; i<con.length; i++){
@@ -249,20 +279,41 @@ export default {
       }
       let x = 0
       for (let i=0; i<passData.length; i++){
-        if (passData[i].type === "short" && x<3){
+        if (passData[i].type === "short"){
           this.$store.commit("passTroops", passData[i])
-          console.log("passed "+(passData[i].passingTerr+1)+" to "+(passData[i].recievingTerr+1))
+          // console.log("short pass from "+(passData[i].passingTerr+1)+" to "+(passData[i].recievingTerr+1))
           x++
         }
+        if (x >= 3)
+          break
       }
       if (x < 3){
         for (let i=0; i<passData.length; i++){
-          if (passData[i].type === "long" && x<3){
+          if (passData[i].type === "long"){
             this.$store.commit("passTroops", passData[i])
-            console.log("passed "+(passData[i].passingTerr+1)+" to "+(passData[i].recievingTerr+1))
-            x++
+            // console.log("long pass from "+(passData[i].passingTerr+1)+" to "+(passData[i].recievingTerr+1))
+            break
           }
         }
+      }
+      return false
+    },
+
+    // ============ Turn In Cards: ===========
+    turnInCards(){
+      if (this.currentPlayer.cards.length < 3)
+        return false
+      let cards = this.currentPlayer.cards.map((val) => this.game.shuffledCards[val].number-1)
+      if (gameData.checkSetOfCards(cards)){
+        if (cards.length === 3)
+          this.$store.dispatch("turnInCards", {ids: [0,1,2], values: cards})
+        else {
+          const ids = gameData.findSetOfCards(cards)
+          const values = ids.map((val) => cards[val])
+          this.$store.dispatch("turnInCards", {ids, values})
+        }
+        // console.log("turned in cards")
+        return true
       }
       return false
     },

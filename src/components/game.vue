@@ -1,7 +1,8 @@
 <template>
   <div class="game">
+    <audio src="http://www.andrewdbuck.com/invasion/pics/troops1.mp3" id="troops1sound"></audio>
     <app-header :phase='game.phase' :round="game.round" :player="game.players[game.turnIndex]" :canTurnInCards="game.canTurnInCards"
-                :attackLine="attackLine" :canCancel="passData.canCancel" :menu="buttonRouter">
+                :attackLine="attackLine" :canCancel="passData.canCancel" :menu="buttonRouter" :paused="aiPaused">
     </app-header>
     <board :territories="game.territories" :players="game.players"></board>
     <div class="wrapper">
@@ -12,7 +13,8 @@
     <alert :show="alert.show" placement="top-right" type="success" :dismissable="true"
             width="200px" :duration="1500" :close="closeAlert">{{alert.content}}</alert>
     <app-footer :phase="game.phase" :terr="selected"></app-footer>
-    <AIplayer :computerAttack="computerAttack" :computerEndTurn="computerEndTurn" :trigger="aiTrigger"></AIplayer>
+    <AIplayer :computerAttack="computerAttack" :computerEndTurn="computerEndTurn"
+              :trigger="aiTrigger" :paused="aiPaused"></AIplayer>
   </div>
 </template>
 
@@ -47,7 +49,9 @@ export default {
       attack: {},
       passData: {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null},
       selected: 0,
-      aiTrigger: 0
+      aiTrigger: 0,
+      aiPaused: false,
+      aiSpeed: 500
     }
   },
   mounted(){
@@ -168,8 +172,17 @@ export default {
         case 'Set':
           this.showPlayerSettings()
           break
-        default:
-          this.$store.commit("drawCard")
+        case 'PAI':
+          if (this.aiPaused){
+            this.aiPaused = false
+            this.aiTrigger++
+          }
+          else
+            this.aiPaused = true
+          break
+        case 'AIS':
+          this.changeAiSpeed()
+          break
       }
     },
     clicker(i){
@@ -196,11 +209,17 @@ export default {
           this.select(i)
       }
     },
-    setAttackLine(text, erase){
-      if (erase)
-        this.attackLine = text
-      else
-        this.attackLine += text
+    setAttackLine(command, id){
+      switch(command){
+        case 0:
+          this.attackLine = ''
+          break
+        case 1:
+          this.attackLine = gameData.territoryInfo[id].name + " vs "
+          break
+        case 2:
+          this.attackLine += gameData.territoryInfo[id].name
+      }
     },
     select(territory){
       $('.territory'+territory).addClass("selected")
@@ -225,9 +244,12 @@ export default {
       if (terr.owner === this.currentPlayer.id){
         if (terr.reserves > 1){
           this.select(i)
-          this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
+          this.setAttackLine(1, i)
           this.$store.commit('setPhase', 'attack2')
-          sounds.attack1.play()
+          sounds.attack1.play().catch((e) => {
+            console.log("reloading attack1 sound")
+            sounds.attack1.load()
+          })
         }
         else
           this.openPopup('alert', 'small-center','That territory does not have enough troops to attack!')
@@ -240,16 +262,19 @@ export default {
         if (this.game.territories[i-1].reserves > 1){
           $('.territory'+this.selected).removeClass("selected")
           this.select(i)
-          this.setAttackLine(gameData.territoryInfo[i].name + " vs ", true)
+          this.setAttackLine(1, i)
         }
         else
           this.openPopup('alert', 'small-center', 'That territory does not have enough troops to attack!')
       }
       else {
         if (gameData.canFight(this.selected, i)){
-          sounds.attack2.play()
+          sounds.attack2.play().catch((e) => {
+            console.log("reloading attack2 sound")
+            sounds.attack2.load()
+          })
           $('.territory'+i).addClass("selected")
-          this.setAttackLine(gameData.territoryInfo[i].name, false)
+          this.setAttackLine(2,i)
           const attackTerr = this.game.territories[this.selected-1]
           const defendTerr = this.game.territories[i-1]
           this.attack = {attackTerr, defendTerr}
@@ -262,18 +287,21 @@ export default {
     computerAttack(attackId, defendId){
       this.select(attackId+1)
       this.select(defendId+1)
+      this.setAttackLine(1, attackId+1)
+      this.setAttackLine(2, defendId+1)
       const attackTerr = this.game.territories[attackId]
       const defendTerr = this.game.territories[defendId]
       this.attack = {attackTerr, defendTerr}
       let redDice = attackTerr.reserves > 3 ? 3
                     : attackTerr.reserves > 2 ? 2 : 1
-      this.pickDice2(redDice)
+      setTimeout(() => this.pickDice2(redDice), this.aiSpeed)
     },
     pickDice1(){
       if (this.attack.attackTerr.reserves > 2){
         const threeDice = this.attack.attackTerr.reserves > 3 ? true : false
+        const dice = threeDice ? 3 : 2
         const title = this.currentPlayer.name + ", please pick number of dice to roll:"
-        this.openPopup("dicepick1", 'small-center', title, '', (i) => this.pickDice2(i), {threeDice})
+        this.openPopup("dicepick1", 'small-center', title, ["One", "Two", "Three"], (i) => this.pickDice2(i), {threeDice, dice})
       }
       else
         this.pickDice2(1)
@@ -289,11 +317,15 @@ export default {
           else {
             if (!sounds.attack2.paused)
               sounds.attack2.currentTime = 0
-            else
-              sounds.attack2.play()
+            else if (!this.currentPlayer.isBot){
+              sounds.attack2.play().catch((e) => {
+                console.log("reloading attack2 sound")
+                sounds.attack2.load()
+              })
+            }
             const title = defender.name + ", please pick number of dice to roll:"
-            this.openPopup("dicepick2", 'small-center', title, '',
-              (i) => this.attackResult(redDice, i), {threeDice: false, id: this.attack.defendTerr.owner})
+            this.openPopup("dicepick2", 'small-center', title, ["One", "Two", "Three"],
+              (i) => this.attackResult(redDice, i), {threeDice: false, dice: 2, id: this.attack.defendTerr.owner})
           }
         }
         else
@@ -310,8 +342,7 @@ export default {
       this.$store.dispatch("attack", losses).then((conquered) => {
         if (this.currentPlayer.isBot){
           if (conquered){
-            this.moveTroops(this.game.territories[losses.attackTerr.id-1].reserves-1)
-            this.aiTrigger--
+            setTimeout(() => this.moveTroops(this.game.territories[losses.attackTerr.id-1].reserves-1), this.aiSpeed/2)
           }
           else {
             this.closeAttack()
@@ -328,7 +359,7 @@ export default {
     },
     cancelAttack(){
       this.closePopup()
-      this.setAttackLine("", true)
+      this.setAttackLine(0)
       this.$store.commit('setPhase', 'attack1')
       $(".selected").removeClass('selected')
       this.attack = {}
@@ -349,22 +380,27 @@ export default {
       }
     },
     moveTroops(i){
-      this.closeAttack();
-      sounds.conquer.play()
+      this.closeAttack()
+      sounds.conquer.play().catch((e) => {
+            console.log("reloading conquer sound")
+            sounds.conquer.load()
+          })
       const data = {passingTerr: this.attack.attackTerr.id-1, recievingTerr: this.attack.defendTerr.id-1, troops: i}
       this.$store.commit("passTroops", data)
       this.$store.dispatch("checkForEliminatedPlayers").then((data) => {
         if (data[0]){
-          if (this.game.phase === "gameOver")
-            this.openPopup("callback", "small-center", "You eliminated "+data[1]+".", '',() => this.gameOver())
-          else
-            this.openPopup("alert", "small-center", "You eliminated "+data[1]+".")
+          const name = this.currentPlayer.isBot ? this.currentPlayer.name : "You"
+          const action = this.game.phase === "gameOver" ? () => this.gameOver() : () => this.checkCards()
+          this.openPopup("callback", "small-center", name+" just eliminated "+data[1]+".", '', action)
+        }
+        else if (this.currentPlayer.isBot){
+          this.aiTrigger--
         }
       })
     },
     gameOver(){
       sounds.playGameOver()
-      this.openPopup("alert", "small-center", this.currentPlayer.name+", you just won the game!")
+      this.openPopup("alert", "small-center", this.game.players[0].name+", you just won the game!")
     },
     repeatAttack(){
       if (Object.keys(this.attack).length === 0)
@@ -372,7 +408,10 @@ export default {
       else if (this.attack.attackTerr.reserves > 1 &&
         this.attack.attackTerr.owner === this.currentPlayer.id &&
         this.attack.defendTerr.owner != this.currentPlayer.id){
-        sounds.attack2.play()
+        sounds.attack2.play().catch((e) => {
+          console.log("reloading attack2 sound")
+          sounds.attack2.load()
+        })
         $('.territory'+this.attack.attackTerr.id).addClass("selected")
         $('.territory'+this.attack.defendTerr.id).addClass("selected")
         this.pickDice1()
@@ -411,7 +450,12 @@ export default {
       if (this.currentPlayer.getsCard){
         this.$store.commit("drawCard")
         this.showCards(true)
-        sounds.viewCards.play()
+        if (!this.currentPlayer.isBot){
+          sounds.viewCards.play().catch((e) => {
+            console.log("reloading viewCards sound")
+            sounds.viewCards.load()
+          })
+        }
       }
       else
         this.openPopup("callback", "small", "No card was drawn because no territories were taken!", '', () => this.endTurn())
@@ -421,7 +465,11 @@ export default {
       this.endTurn()
     },
     checkCards(){
-      if (this.currentPlayer.mustTurnInCards){
+      if (this.currentPlayer.isBot){
+        this.closePopup()
+        this.aiTrigger--
+      }
+      else if (this.currentPlayer.mustTurnInCards){
         const content = this.currentPlayer.name+", you have "+this.currentPlayer.cards.length+" cards. You must turn in cards now."
         this.openPopup('callback', 'small', 'You must turn in cards', content, () => this.turnInCards())
       }
@@ -430,22 +478,16 @@ export default {
     },
     showCards(endTurn){
       let action = endTurn ? () => this.endTurn() : () => this.closePopup()
-      let cards = this.currentPlayer.cards.map((val) => this.game.shuffledCards[val].number)
+      let cards = this.currentPlayer.cards.map((val) => this.game.shuffledCards[val].number-1)
       this.openPopup('cards', '', this.currentPlayer.name+"\'s cards", '', action, {cards})
     },
     turnInCards(){
       if (this.game.canTurnInCards){
-        let lowcards = []
-        let highcards = []
-        let cards = this.currentPlayer.cards
-        for (let i=0; i<cards.length; i++){
-          lowcards.push(this.game.shuffledCards[cards[i]].number-1)
-          highcards.push(this.game.shuffledCards[cards[i]].number)
-        }
         if (this.game.setsTurnedIn < this.game.settings.numOfSets){
-          if (gameData.checkSetOfCards(lowcards))
+          let cards = this.currentPlayer.cards.map((val) => this.game.shuffledCards[val].number-1)
+          if (gameData.checkSetOfCards(cards))
             this.openPopup('turnInCards', '', "Turn In Cards", '', () => this.closePopup(),
-            {cards: highcards, currentPlayer: this.currentPlayer})
+            {cards: cards, currentPlayer: this.currentPlayer})
             //(popup commits turn in cards directly, so when it is done all we need to do is close popup)
           else
             this.openPopup("alert", "small", "You do not have a set of cards to turn in!")
@@ -615,6 +657,16 @@ export default {
     showPlayerSettings(){
       this.openPopup('settings', 'small', this.currentPlayer.name+"\'s settings", '', '',
         {currentPlayer: this.currentPlayer, id: this.currentPlayer.id})
+    },
+    changeAiSpeed(){
+      this.openPopup('dicepick1', 'small', 'Select AI Speed', ["Fast", "Medium", "Slow"], (x) => {
+        if (x){
+          this.aiSpeed = x * 250
+          this.closePopup()
+        }
+        else
+          this.closePopup()
+      }, {threeDice: true, dice: this.aiSpeed/250})
     }
   }
 }

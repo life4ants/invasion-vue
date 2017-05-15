@@ -11,14 +11,16 @@
 
         <!-- ====== body: ======= -->
         <div v-if="'players' === type" class="modal-body">
-          <ol>
-            <li v-for='player in data.players'>
-              <icon :code='player.code' ></icon>
-              <h4>{{player.name}}:</h4>
-              <div>{{player.terrCount}} Territories</div>
-              <div>{{player.cards.length}} {{player.cards.length === 1 ? "card" : "cards"}}</div>
-            </li>
-          </ol>
+          <table>
+            <tr v-for='player in data.players'>
+              <td style="display: flex; align-items: center;">
+                <icon :code='player.code' ></icon>
+                <h4>{{player.name}}:</h4>
+              </td>
+              <td class="t-col">{{player.terrCount}} Territories</td>
+              <td class="c-col">{{player.cards.length}} {{player.cards.length === 1 ? "card" : "cards"}}</td>
+            </tr>
+          </table>
           <span>A set of cards is worth {{data.cardValue}} troops.</span>
         </div>
 
@@ -27,7 +29,7 @@
             <label>Please select three cards to turn in: </label>
           </div>
           <div v-if="data.cards.length > 0" class="cardBox">
-            <card v-for="(card, key) in data.cards" :value="card" :key="key" :index="key" :clickHandler="selectCard"></card>
+            <card v-for="(card, key) in data.cards" :value="card+1" :key="key" :index="key" :clickHandler="selectCard"></card>
           </div>
           <div v-else><i>You do not have any cards!</i></div>
           <span class="right"><i>{{error}}</i></span>
@@ -43,11 +45,11 @@
 
         <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-body center" >
           <input type="radio" id="one" :value="1" v-model="dice">
-          <label for="one">One</label>
+          <label for="one">{{content[0]}}</label>
           <input type="radio" id="two" :value="2" v-model="dice">
-          <label for="two">Two</label>
+          <label for="two">{{content[1]}}</label>
           <input v-if="data.threeDice" type="radio" id="three" :value="3" v-model="dice">
-          <label v-if="data.threeDice" for="three">Three</label>
+          <label v-if="data.threeDice" for="three">{{content[2]}}</label>
           <div class="alwaysRoll" v-if="'dicepick2' === type" >
             <input type="checkbox" v-model="autoroll">
             <label>Always roll {{dice === 2 ? "two dice" : "one die"}} and don't ask again</label>
@@ -178,9 +180,9 @@
         if (this.selectedCards.length != 3)
           this.error = "Please select exactly three cards"
         else {
-          let cards = this.selectedCards.sort().map((val) => this.data.cards[val]-1)//LOW values
-          if (gameData.checkSetOfCards(cards)){
-            this.$store.dispatch('turnInCards', {ids: this.selectedCards, values: cards})
+          let values = this.selectedCards.map((val) => this.data.cards[val])//LOW values
+          if (gameData.checkSetOfCards(values)){
+            this.$store.dispatch('turnInCards', {ids: this.selectedCards, values})
             this.error = ''
             this.selectedCards = []
             this.action()
@@ -289,7 +291,7 @@
         }
         else if (['dicepick1', 'dicepick2'].includes(this.type)){
           this.autoroll = false
-          this.dice = this.data.threeDice ? 3 : 2
+          this.dice = this.data.dice
         }
         else if ('settings' === this.type){
           this.dice = this.data.currentPlayer.settings.autoroll ? this.data.currentPlayer.settings.autoroll : 2
@@ -304,22 +306,20 @@
 </script>
 
 <style scoped>
-  ol {
-    list-style: none;
-    padding: 0;
+  table {
+    margin: auto;
   }
-  ol li {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  td h4{
+    display: inline-block;
+    margin: 10px 20px;
   }
-  li h4{
-    flex-basis: 90px;
-    text-align: left;
-    margin-left: 15px;
+  .t-col {
+    width: 102px;
+    text-align: right;
+    padding-right: 20px;
   }
-  li div {
-    margin-right: 20px;
+  .c-col {
+    width: 46px;
   }
   .right {
     float: right;
