@@ -36,4 +36,11 @@ import gameData from "./game_data.js"
    color: #344;
    font-size: 16px;
   }
+
+  @media(min-width: 1200px){
+    footer{
+      left: 50%;
+      margin-left: -600px;
+    }
+  }
 </style>

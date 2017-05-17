@@ -22,6 +22,7 @@ export default {
         this.troops2.currentTime = 0
       }
       this.troops1.play().catch((e) => {
+        console.log(e)
         console.log("reloading troops1 sound")
         this.troops1.load()
       })
@@ -33,6 +34,7 @@ export default {
         this.troops1.currentTime = 0
       }
       this.troops2.play().catch((e) => {
+        console.log(e)
         console.log("reloading troops2 sound")
         this.troops2.load()
       })
@@ -49,6 +51,7 @@ export default {
       this.troops1.currentTime = 0
     }
     this.startTurn.play().catch((e) => {
+      console.log(e)
       console.log("reloading startTurn sound")
       this.startTurn.load()
     })
@@ -59,6 +62,7 @@ export default {
       this.attack2.currentTime = 0
     }
     this.attack3.play().catch((e) => {
+      console.log(e)
       console.log("reloading attack3 sound")
       this.attack3.load()
     })

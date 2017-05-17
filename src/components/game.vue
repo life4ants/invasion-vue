@@ -1,6 +1,5 @@
 <template>
   <div class="game">
-    <audio src="http://www.andrewdbuck.com/invasion/pics/troops1.mp3" id="troops1sound"></audio>
     <app-header :phase='game.phase' :round="game.round" :player="game.players[game.turnIndex]" :canTurnInCards="game.canTurnInCards"
                 :attackLine="attackLine" :canCancel="passData.canCancel" :menu="buttonRouter" :paused="aiPaused">
     </app-header>
@@ -19,7 +18,6 @@
 </template>
 
 <script>
-import setup from './setup'
 import header from './header'
 import invasionMap from './invasion_map'
 import board from './board'
@@ -33,7 +31,7 @@ import AIplayer from './AIplayer'
 export default {
   name: 'game',
   components: {
-    setup, board, popup, alert, AIplayer,
+    board, popup, alert, AIplayer,
     'app-footer': footer,
     'app-header': header,
     'invasion-map': invasionMap
@@ -43,12 +41,13 @@ export default {
   ],
   data(){
     return {
-      attackLine: ' ',
+      attackLine: '',
       popup: {show: false},
       alert: {show: false},
       attack: {},
       passData: {terrs: [], long: 0, short: 0, canCancel: true, passer: null, passie: null},
-      selected: 0,
+      selected: null,
+      welcome: true,
       aiTrigger: 0,
       aiPaused: false,
       aiSpeed: 500
@@ -56,12 +55,7 @@ export default {
   },
   mounted(){
     window.onbeforeunload = () => this.checkForChanges() ? '' : undefined
-    if (this.game.phase === "initialTroops"){
-      const troops = this.currentPlayer.tempReserves
-      const content = "<p class='indent'>The territories have been randomly asigned. Each player has been give a number of troops to distribute before the game starts. Pick your position and defend it well!</p><p class='indent'>Each player will distribute troops in turn. <strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
-      this.openPopup('info', 'small', "Distribute Initial Troops", content)
-    }
-    else
+    if (!this.currentPlayer.isBot)
       this.watchTurnMessage()
   },
   destroyed(){
@@ -90,9 +84,15 @@ export default {
     watchTurnMessage(){
       switch (this.game.turnMessage.type){
         case 'InTrps':
-          const troops = this.currentPlayer.tempReserves
-          let content = this.currentPlayer.name + ", now it is your turn to distribute " +(troops > 1 ? troops+" troops.": troops+" troop.")
-          this.openPopup('alert', 'small-center', content)
+          if (this.welcome && !this.currentPlayer.isBot){
+            this.showWelcomeMessage()
+            this.welcome = false
+          }
+          else {
+            const troops = this.currentPlayer.tempReserves
+            let content = this.currentPlayer.name + ", now it is your turn to distribute " +(troops > 1 ? troops+" troops.": troops+" troop.")
+             this.openPopup('alert', 'small-center', content)
+          }
           break
         case 'Trps':
           this.showReservesMessage()
@@ -100,8 +100,13 @@ export default {
           break
         case 'StTurn':
           if (['attack1', 'attack2'].includes(this.game.phase)){
-            content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
-            this.openPopup('info', 'small-center', 'Distribution Complete', content)
+            if (this.currentPlayer.isBot){
+              this.openPopup('alert', 'small-center', this.currentPlayer.name+"\'s Turn!")
+            }
+            else {
+              content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
+              this.openPopup('info', 'small-center', 'Distribution Complete', content)
+            }
           }
           else { //this should only run on Mounted(). phase should be pass1 or pass2
             if (this.game.phase === 'pass2')
@@ -111,9 +116,12 @@ export default {
           break
         case 'Cards':
           this.showCardsMessage()
-          break
-        default:
       }
+    },
+    showWelcomeMessage(){
+      const troops = this.currentPlayer.tempReserves
+      const content = "<p class='indent'>The territories have been randomly asigned. Each player has been give a number of troops to distribute before the game starts. Pick your position and defend it well!</p><p class='indent'>Each player will distribute troops in turn. <strong>"+ this.currentPlayer.name +"</strong>, start by adding "+(troops > 1 ? troops+" troops": troops+" troop")+".</p>"
+      this.openPopup('info', 'small', "Distribute Initial Troops", content)
     },
     showReservesMessage(){
       const data = this.game.turnMessage.data
@@ -247,6 +255,7 @@ export default {
           this.setAttackLine(1, i)
           this.$store.commit('setPhase', 'attack2')
           sounds.attack1.play().catch((e) => {
+            console.log(e)
             console.log("reloading attack1 sound")
             sounds.attack1.load()
           })
@@ -270,6 +279,7 @@ export default {
       else {
         if (gameData.canFight(this.selected, i)){
           sounds.attack2.play().catch((e) => {
+            console.log(e)
             console.log("reloading attack2 sound")
             sounds.attack2.load()
           })
@@ -319,6 +329,7 @@ export default {
               sounds.attack2.currentTime = 0
             else if (!this.currentPlayer.isBot){
               sounds.attack2.play().catch((e) => {
+                console.log(e)
                 console.log("reloading attack2 sound")
                 sounds.attack2.load()
               })
@@ -382,6 +393,7 @@ export default {
     moveTroops(i){
       this.closeAttack()
       sounds.conquer.play().catch((e) => {
+        console.log(e)
             console.log("reloading conquer sound")
             sounds.conquer.load()
           })
@@ -409,6 +421,7 @@ export default {
         this.attack.attackTerr.owner === this.currentPlayer.id &&
         this.attack.defendTerr.owner != this.currentPlayer.id){
         sounds.attack2.play().catch((e) => {
+          console.log(e)
           console.log("reloading attack2 sound")
           sounds.attack2.load()
         })
@@ -452,6 +465,7 @@ export default {
         this.showCards(true)
         if (!this.currentPlayer.isBot){
           sounds.viewCards.play().catch((e) => {
+            console.log(e)
             console.log("reloading viewCards sound")
             sounds.viewCards.load()
           })
@@ -680,7 +694,7 @@ export default {
   .wrapper{
     background-color: #222;
     width: 1200px;
-    height: 1320px;
+    height: 1316px;
   }
 @media(min-width: 675px){
   .game{

@@ -177,7 +177,7 @@ export default {
       let con = this.enemyCountByContinent(continentId)
       for (let i=0; i<con.length; i++){ //put 1 troop on territories with one enemy
         if (con[i].enemies === 1){
-          if (this.game.territories[con[i].index] < 3 && reserves > 0){
+          if (this.game.territories[con[i].index].reserves < 3 && reserves > 0){
             reserves--
             this.$store.dispatch("addTroops", con[i].index)
           }

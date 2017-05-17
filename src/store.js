@@ -134,7 +134,7 @@ export default new Vuex.Store({
                     shuffledCards: gameData.shuffle(gameData.cards),
                     territories: data.territories,
                     turnIndex: data.turnIndex,
-                    turnMessage: null
+                    turnMessage: {type: "InTrps"}
                   }
     },
     loadGame(state, game){
