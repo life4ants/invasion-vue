@@ -486,7 +486,7 @@ var territoryInfo = [
     for (let i=0; i<this.territoryInfo[startTerr].borders.length; i++){
       let id = this.territoryInfo[startTerr].borders[i]
       if (territories[id-1].owner === owner && !list.includes(id)){
-        list.concat(this.checkContinuity(territories, owner, id, list))
+        list = this.checkContinuity(territories, owner, id, list)
       }
     }
     return list
