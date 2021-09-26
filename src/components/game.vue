@@ -104,8 +104,9 @@ export default {
               this.openPopup('alert', 'small-center', this.currentPlayer.name+"\'s Turn!")
             }
             else {
-              content = "Distribution of troops is complete. " + this.currentPlayer.name + ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack."
-              this.openPopup('info', 'small-center', 'Distribution Complete', content)
+              this.openPopup('info', 'small-center', 'Distribution Complete', 
+                "Distribution of troops is complete. " + this.currentPlayer.name + 
+                ", you may now begin your turn.<br>Click on one of your territories to attack from, then click an opponent's territory to attack.")
             }
           }
           else { //this should only run on Mounted(). phase should be pass1 or pass2
