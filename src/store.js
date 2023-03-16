@@ -82,9 +82,9 @@ export default new Vuex.Store({
       if (state.game.nextCard > 94)
         state.game.nextCard = 0
     },
-    cardCheater(state, id){
-      state.game.players[state.game.turnIndex].cards.push(id)
-    },
+    // cardCheater(state, id){
+    //   state.game.players[state.game.turnIndex].cards.push(id)
+    // },
     //============== General Setters: ==============
     setPhase(state, phase){
       state.game.phase = phase
