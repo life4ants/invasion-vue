@@ -44,12 +44,13 @@
         </div>
 
         <div v-else-if="['dicepick1', 'dicepick2'].includes(type)" class="modal-body center" >
+          <p>{{content}}</p>
           <input type="radio" id="one" :value="1" v-model="dice">
-          <label for="one">{{content[0]}}</label>
+          <label for="one">One</label>
           <input type="radio" id="two" :value="2" v-model="dice">
-          <label for="two">{{content[1]}}</label>
+          <label for="two">Two</label>
           <input v-if="data.threeDice" type="radio" id="three" :value="3" v-model="dice">
-          <label v-if="data.threeDice" for="three">{{content[2]}}</label>
+          <label v-if="data.threeDice" for="three">Three</label>
           <div class="alwaysRoll" v-if="'dicepick2' === type" >
             <input type="checkbox" v-model="autoroll">
             <label>Always roll {{dice === 2 ? "two dice" : "one die"}} and don't ask again</label>
@@ -177,8 +178,12 @@
           this.setSettings()
       },
       checkCards(){
-        if (this.selectedCards.length != 3)
+        if (this.selectedCards.length != 3){
           this.error = "Please select exactly three cards"
+          console.log(this.selectedCards)
+          this.selectedCards = []
+          $(".selected").removeClass("selected")
+        }
         else {
           let values = this.selectedCards.map((val) => this.data.cards[val])//LOW values
           if (gameData.checkSetOfCards(values)){
@@ -229,11 +234,11 @@
           this.action(false)
         }
         else if (this.type === "turnInCards"){
-          if (this.data.currentPlayer.mustTurnInCards){
+          this.selectedCards = []
+          $(".selected").removeClass("selected")
+          if (this.data.currentPlayer.mustTurnInCards)
             this.error = "You cannot cancel. You MUST turn in cards"
-          }
           else{
-            this.selectedCards = []
             this.error = ''
             this.action()
           }

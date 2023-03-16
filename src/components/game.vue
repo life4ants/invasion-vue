@@ -312,7 +312,7 @@ export default {
         const threeDice = this.attack.attackTerr.reserves > 3 ? true : false
         const dice = threeDice ? 3 : 2
         const title = this.currentPlayer.name + ", please pick number of dice to roll:"
-        this.openPopup("dicepick1", 'small-center', title, ["One", "Two", "Three"], (i) => this.pickDice2(i), {threeDice, dice})
+        this.openPopup("dicepick1", 'small-center', title, '', (i) => this.pickDice2(i), {threeDice, dice})
       }
       else
         this.pickDice2(1)
@@ -335,8 +335,11 @@ export default {
                 sounds.attack2.load()
               })
             }
-            const title = defender.name + ", please pick number of dice to roll:"
-            this.openPopup("dicepick2", 'small-center', title, ["One", "Two", "Three"],
+            const title = defender.name + ", you are being attacked"
+            const attackTerr = gameData.territoryInfo[this.attack.attackTerr.id].name
+            const defendTerr = gameData.territoryInfo[this.attack.defendTerr.id].name
+            const content = `${this.currentPlayer.name} is attacking ${defendTerr} from ${attackTerr}. Please pick number of dice to roll:`
+            this.openPopup("dicepick2", 'small-center', title, content,
               (i) => this.attackResult(redDice, i), {threeDice: false, dice: 2, id: this.attack.defendTerr.owner})
           }
         }
